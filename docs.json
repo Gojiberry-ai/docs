@@ -21,6 +21,7 @@
         ]
       },
       "tutorials",
+      "mcp",
       {
         "group": "API reference",
         "pages": [

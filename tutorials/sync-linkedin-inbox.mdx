@@ -1,6 +1,6 @@
 ---
 title: "Sync my LinkedIn Inbox"
-description: "Read Unibox threads, then the messages in each thread."
+description: "Read Unibox threads and their messages, then reply, through the API or the MCP server."
 icon: "inbox"
 keywords:
   - "unibox"
@@ -8,8 +8,25 @@ keywords:
   - "inbox"
   - "threads"
   - "messages"
+  - "mcp"
 hidden: true
 ---
+
+## Why manage your LinkedIn inbox outside the app
+
+The Unibox gathers the LinkedIn conversations of every seat on your account, and Gojiberry flags which replies are interested. Reaching it through the API or the [MCP server](/mcp) puts those replies where you already work:
+
+- **Never miss a hot reply.** Pull interested, unread threads into your CRM, Slack, or a daily digest, so a "let's talk" doesn't wait in a tab nobody opened.
+- **Keep your CRM complete.** Copy every LinkedIn conversation onto the matching contact or deal, next to emails and calls, so the whole team sees the history.
+- **Triage in seconds from your AI assistant.** Ask ChatGPT, Claude, or Grok "Who replied this week and what do they want?" and get a summary instead of reading thread by thread.
+- **Reply faster.** Let your assistant draft answers from the conversation, review them, and send them from the right LinkedIn seat without switching tools.
+- **Cover several seats at once.** Managers and agencies follow every seat's replies in one place, and act for a team member with [impersonation](/quickstart#impersonation-organization-owners).
+
+<Tip>
+  With the MCP server you don't write code: the assistant calls the tools named in each step below for you. With the API, you make the calls yourself.
+</Tip>
+
+## Sync the inbox
 
 A sync is two calls. List the conversations, then read the messages in each one. Both responses are a page: `data` is the rows, and `total`, `page`, `limit`, and `totalPages` describe that page.
 
@@ -17,7 +34,9 @@ Send `Authorization: Bearer YOUR_API_KEY`. The base URL is `https://ext.gojiberr
 
 <Steps>
   <Step title="List threads">
-    `GET /v1/unibox/threads` returns LinkedIn conversations, newest activity first. Omit `seatId` to include every LinkedIn seat on the account, or pass one seat id to sync that seat only. Pass `dateFrom` as an ISO date to keep threads whose last message is on or after that time.
+    `GET /v1/unibox/threads` returns LinkedIn conversations, newest activity first. Omit `seatId` to include every LinkedIn seat on the account, or pass one seat id to sync that seat only. Pass `dateFrom` as an ISO date to keep threads whose last message is on or after that time. `interested`, `seen`, and `attendeeFullName` narrow the list further.
+
+    **MCP tool:** `list_unibox_threads`, with the same filters. Try asking: *"Show my unread LinkedIn threads from interested leads this week."*
 
     ```bash
     curl -H "Authorization: Bearer YOUR_API_KEY" \
@@ -48,12 +67,14 @@ Send `Authorization: Bearer YOUR_API_KEY`. The base URL is `https://ext.gojiberr
     }
     ```
 
-    Store `id`. That is the thread id the next call expects. It is not the LinkedIn `conversationUrn`.
+    Store `id`. That is the thread id the next calls expect. It is not the LinkedIn `conversationUrn`.
 
     `contactId` is set when the attendee matches a Gojiberry contact, and is null otherwise. `seen` is whether the thread has been opened. `interested` is the sentiment of the latest reply, and stays null until a reply has been classified. Walk `page` from 1 through `totalPages`.
   </Step>
   <Step title="Read the messages in a thread">
     `GET /v1/unibox/threads/{threadId}/messages` returns that thread's messages, oldest first. `threadId` is the `id` from the previous call.
+
+    **MCP tool:** `get_unibox_thread_messages`. Try asking: *"Summarize my conversation with Jane Doe."*
 
     ```bash
     curl -H "Authorization: Bearer YOUR_API_KEY" \
@@ -89,10 +110,30 @@ Send `Authorization: Bearer YOUR_API_KEY`. The base URL is `https://ext.gojiberr
     }
     ```
 
-    `senderIsSelf` is true when the message was sent from your LinkedIn seat, and false when the other person sent it. `deliveredAt` is when LinkedIn delivered the message. `createdAt` is when Gojiberry stored the row, which can be later for older history. An attachment's `id`, together with the message `id`, is what [Download an attachment](/api-reference/unibox/download-attachment) expects.
+    `senderIsSelf` is true when the message was sent from your LinkedIn seat, and false when the other person sent it. `deliveredAt` is when LinkedIn delivered the message. `createdAt` is when Gojiberry stored the row, which can be later for older history.
+
+    To fetch an attachment's file, pass the message `id` and the attachment `id` to [Download an attachment](/api-reference/unibox/download-attachment). This call has no MCP tool yet.
 
     On the next sync, pass the newest `lastMessageDate` you stored as `dateFrom` so you only pull threads that changed.
   </Step>
+  <Step title="Reply (optional)">
+    `POST /v1/unibox/messages/send-message` sends a LinkedIn message in the thread, from the thread's seat. `chatId` is the thread `id`. You can attach a `file` or a `voiceMessage` as multipart fields.
+
+    **MCP tool:** `send_unibox_message`. Files and voice messages are passed as base64. Try asking: *"Draft a reply to Jane proposing Tuesday at 10am, and send it once I approve."*
+
+    ```bash
+    curl -X POST -H "Authorization: Bearer YOUR_API_KEY" \
+      -F chatId=4812 \
+      -F message="Great, does Tuesday at 10am work for you?" \
+      "https://ext.gojiberry.ai/v1/unibox/messages/send-message"
+    ```
+
+    The response is the stored message, in the same format as in the previous step.
+
+    <Warning>
+      This sends a real message to a real person and cannot be undone. When an assistant drafts replies for you, review them before you let it send.
+    </Warning>
+  </Step>
 </Steps>
 
-Every field is listed on [Get threads](/api-reference/unibox/get-threads) and [Get messages](/api-reference/unibox/get-messages).
+Every field is listed on [Get threads](/api-reference/unibox/get-threads), [Get messages](/api-reference/unibox/get-messages), and [Send a message](/api-reference/unibox/send-message).
