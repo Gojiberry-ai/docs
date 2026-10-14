@@ -20,16 +20,7 @@
           "quickstart"
         ]
       },
-      {
-        "group": "Tutorials",
-        "icon": "book-open",
-        "pages": [
-          "tutorials",
-          "tutorials/sync-linkedin-inbox",
-          "tutorials/website-visitors",
-          "tutorials/lead-in-campaign"
-        ]
-      },
+      "tutorials",
       {
         "group": "API reference",
         "pages": [
@@ -130,7 +121,10 @@
           }
         ],
         "openapi": "openapi.json"
-      }
+      },
+      "tutorials/sync-linkedin-inbox",
+      "tutorials/website-visitors",
+      "tutorials/lead-in-campaign"
     ]
   },
   "logo": {
