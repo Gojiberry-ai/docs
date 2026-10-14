@@ -19,6 +19,10 @@
           "index",
           "quickstart"
         ]
+      },
+      {
+        "group": "API reference",
+        "pages": []
       }
     ],
     "global": {
@@ -79,6 +83,7 @@
       "auth": {
         "method": "bearer"
       }
-    }
+    },
+    "openapi": "https://ext.gojiberry.ai/openapi.json"
   }
 }
