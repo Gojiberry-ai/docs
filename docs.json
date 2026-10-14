@@ -25,36 +25,97 @@
         "pages": [
           {
             "group": "Status",
-            "pages": []
+            "pages": [
+              "api-reference/status/hello",
+              "api-reference/status/health"
+            ]
           },
           {
             "group": "Contacts",
-            "pages": []
+            "pages": [
+              "api-reference/contacts/create-a-contact",
+              "api-reference/contacts/list-contacts",
+              "api-reference/contacts/get-a-contact",
+              "api-reference/contacts/update-a-contact",
+              "api-reference/contacts/delete-a-contact",
+              "api-reference/contacts/add-contacts-to-a-list",
+              "api-reference/contacts/remove-contacts-from-a-list",
+              "api-reference/contacts/intent-type-counts",
+              "api-reference/contacts/enrich-email",
+              "api-reference/contacts/enrich-phone",
+              "api-reference/contacts/enrich-email-async",
+              "api-reference/contacts/enrich-phone-async",
+              "api-reference/contacts/reject-a-lead",
+              "api-reference/contacts/unreject-a-lead",
+              "api-reference/contacts/add-a-signal"
+            ]
           },
           {
             "group": "Campaigns",
-            "pages": []
+            "pages": [
+              "api-reference/campaigns/create-a-campaign",
+              "api-reference/campaigns/list-campaigns",
+              "api-reference/campaigns/get-a-campaign",
+              "api-reference/campaigns/update-a-campaign",
+              "api-reference/campaigns/delete-a-campaign",
+              "api-reference/campaigns/logs",
+              "api-reference/campaigns/status"
+            ]
           },
-          "api-reference/contacts/create-a-contact",
           {
             "group": "Lists",
-            "pages": []
+            "pages": [
+              "api-reference/lists/create-a-list",
+              "api-reference/lists/list-lists",
+              "api-reference/lists/get-a-list"
+            ]
           },
           {
             "group": "Directory",
-            "pages": []
+            "pages": [
+              "api-reference/directory/industries",
+              "api-reference/directory/locations",
+              "api-reference/directory/search-leads",
+              "api-reference/directory/reveal-leads",
+              "api-reference/directory/search-companies",
+              "api-reference/directory/reveal-companies"
+            ]
           },
           {
             "group": "Lead source agents",
-            "pages": []
+            "pages": [
+              "api-reference/agents/create-a-source-agent",
+              "api-reference/agents/list-source-agents",
+              "api-reference/agents/get-a-source-agent",
+              "api-reference/agents/update-a-source-agent",
+              "api-reference/agents/delete-a-source-agent",
+              "api-reference/agents/logs"
+            ]
           },
           {
             "group": "Organization",
-            "pages": []
+            "pages": [
+              "api-reference/organization/get-the-organization",
+              "api-reference/organization/members"
+            ]
           },
           {
             "group": "Account",
-            "pages": []
+            "pages": [
+              "api-reference/account/get-the-authenticated-user",
+              "api-reference/account/permissions",
+              "api-reference/account/email-seats"
+            ]
+          },
+          {
+            "group": "Unibox",
+            "pages": [
+              "api-reference/unibox/get-threads",
+              "api-reference/unibox/get-messages",
+              "api-reference/unibox/contact-chats",
+              "api-reference/unibox/send-message",
+              "api-reference/unibox/download-attachment"
+            ]
           }
         ]
       }
