@@ -173,5 +173,6 @@
       "server": "https://ext.gojiberry.ai"
     },
     "openapi": "openapi.json"
-  }
+  },
+  "description": "Developer documentation for Gojiberry, the AI platform that finds B2B leads showing buying signals and reaches out to them on LinkedIn and email. Use the REST API or the MCP server to manage contacts, lists, source agents, campaigns, the Directory, and your LinkedIn inbox, and connect Gojiberry to ChatGPT, Claude, Grok, your CRM, or your own code."
 }
