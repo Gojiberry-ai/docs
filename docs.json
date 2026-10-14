@@ -22,7 +22,41 @@
       },
       {
         "group": "API reference",
-        "pages": []
+        "pages": [
+          {
+            "group": "Status",
+            "pages": []
+          },
+          {
+            "group": "Contacts",
+            "pages": []
+          },
+          {
+            "group": "Campaigns",
+            "pages": []
+          },
+          "api-reference/contacts/create-a-contact",
+          {
+            "group": "Lists",
+            "pages": []
+          },
+          {
+            "group": "Directory",
+            "pages": []
+          },
+          {
+            "group": "Lead source agents",
+            "pages": []
+          },
+          {
+            "group": "Organization",
+            "pages": []
+          },
+          {
+            "group": "Account",
+            "pages": []
+          }
+        ]
       }
     ],
     "global": {
@@ -83,7 +117,6 @@
       "auth": {
         "method": "bearer"
       }
-    },
-    "openapi": "https://ext.gojiberry.ai/openapi.json"
+    }
   }
 }
