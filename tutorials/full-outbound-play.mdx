@@ -1,0 +1,134 @@
+---
+title: "A full outbound play from one prompt"
+description: "Create a list, a source agent for your ideal customer, and a campaign, then activate it."
+icon: "rocket"
+keywords:
+  - "full cycle agent"
+  - "list"
+  - "source agent"
+  - "campaign"
+  - "activate"
+  - "mcp"
+hidden: true
+---
+
+## Why
+
+A Full Cycle agent is three pieces linked by one list: a **source agent** finds leads that match your ideal customer and adds them to the list, and a **campaign** reaches out to everyone on that list. Set it up once and it keeps sourcing and contacting new leads every day.
+
+With the [MCP server](/mcp-server), one prompt builds all three:
+
+> *"Create a list called 'Heads of Sales FR', a source agent that finds Heads of Sales at French SaaS companies of 51 to 200 people who use HubSpot or are hiring, and a LinkedIn campaign with a connection request and two AI messages. Show me everything before you activate it."*
+
+The assistant chains `create_list`, `create_agent`, `list_campaigns` (to find your LinkedIn seat), `create_campaign`, and `activate_campaign` once you approve. The steps below are the same calls through the API.
+
+Send `Authorization: Bearer YOUR_API_KEY`. The base URL is `https://ext.gojiberry.ai`.
+
+<Steps>
+  <Step title="Create the list">
+    `POST /v1/list` creates the list that links the agent and the campaign.
+
+    **MCP tool:** `create_list`
+
+    ```bash
+    curl -X POST -H "Authorization: Bearer YOUR_API_KEY" \
+      -H "Content-Type: application/json" \
+      -d '{ "name": "Heads of Sales FR" }' \
+      "https://ext.gojiberry.ai/v1/list"
+    ```
+
+    The response is the list. Keep its `id`, here `321`.
+  </Step>
+  <Step title="Create the source agent">
+    `POST /v1/agent` describes your ideal customer and the signals that make a lead worth contacting now. `listId` is the list from the previous step.
+
+    **MCP tool:** `create_agent`
+
+    ```bash
+    curl -X POST -H "Authorization: Bearer YOUR_API_KEY" \
+      -H "Content-Type: application/json" \
+      -d '{
+        "name": "Heads of Sales FR",
+        "listId": 321,
+        "targetJobTitles": ["Head of Sales", "VP Sales"],
+        "targetIndustries": ["Computer Software"],
+        "targetCompanySizes": ["51-200"],
+        "targetLocations": ["France"],
+        "targetCompanyTypes": ["Private Company", "Startup"],
+        "variables": [
+          { "type": "SEARCH_KEYWORD", "value": "\"sales pipeline\"" },
+          { "type": "COMPETITOR_PAGE_URL", "value": "https://www.linkedin.com/company/lemlist" },
+          { "type": "TECHNOLOGY", "value": "hubspot" },
+          { "type": "HIRING", "value": "true" }
+        ],
+        "leadWaterfall": true,
+        "minLeadScore": 0.6
+      }' \
+      "https://ext.gojiberry.ai/v1/agent"
+    ```
+
+    `variables` are the signals, 4 to 15 of them. The `value` format depends on the `type`: a quoted keyword of 1 to 3 words, a LinkedIn page URL, `"true"` for events like `HIRING`, or a lowercase technology name. Values are not validated, so a typo saves fine and then finds nothing.
+
+    The response is the agent. If your account is at its active agent limit, the agent is created paused.
+  </Step>
+  <Step title="Find your LinkedIn seat">
+    LinkedIn steps are sent from a connected LinkedIn seat. The API has no seat listing yet: `GET /v1/campaign` returns your campaigns, and `linkedinSeatId` on any of them is the id to reuse. For email steps, `GET /v1/email-seat` lists your mailboxes.
+
+    **MCP tool:** `list_campaigns`, and `list_email_seats` for email.
+
+    ```bash
+    curl -H "Authorization: Bearer YOUR_API_KEY" \
+      "https://ext.gojiberry.ai/v1/campaign"
+    ```
+  </Step>
+  <Step title="Create the campaign, inactive">
+    `POST /v1/campaign` defines the outreach. `listIds` holds the list from the first step. A new campaign starts **active by default**, so pass `"active": false` to review it before anything is sent.
+
+    **MCP tool:** `create_campaign`
+
+    ```bash
+    curl -X POST -H "Authorization: Bearer YOUR_API_KEY" \
+      -H "Content-Type: application/json" \
+      -d '{
+        "name": "Heads of Sales FR",
+        "listIds": [321],
+        "linkedinSeatId": 14,
+        "active": false,
+        "language": "en-US",
+        "steps": [
+          { "type": "invitationNote", "note": "Hi [FirstName], happy to connect.", "delayAfterLastStep": 1 },
+          { "type": "message", "messageMode": "ai", "delayAfterLastStep": 2 },
+          { "type": "message", "messageMode": "ai", "delayAfterLastStep": 4 }
+        ]
+      }' \
+      "https://ext.gojiberry.ai/v1/campaign"
+    ```
+
+    Steps run in order. A campaign has at most one connection request, which cannot come after a message, and every `delayAfterLastStep` is at least 1 day. `"messageMode": "ai"` writes each message for each contact; `"same"` sends your `message` as is, with variables such as `[FirstName]` and `[Company]`.
+
+    The response is the campaign. Keep its `id`, here `55`.
+  </Step>
+  <Step title="Activate it">
+    `PATCH /v1/campaign/{id}/status` starts the daily outreach. The launch hours are set in the LinkedIn seat settings in the app.
+
+    **MCP tool:** `activate_campaign`. The assistant asks you to confirm first, since this sends real messages.
+
+    ```bash
+    curl -X PATCH -H "Authorization: Bearer YOUR_API_KEY" \
+      -H "Content-Type: application/json" \
+      -d '{ "active": true }' \
+      "https://ext.gojiberry.ai/v1/campaign/55/status"
+    ```
+
+    Each account runs 2 campaigns at once, plus one per Full-cycle Agent add-on. At capacity, a free add-on from your organization is assigned automatically; without one, the call fails with `400`. This endpoint allows 10 calls per minute.
+  </Step>
+  <Step title="Follow the results">
+    - `GET /v1/agent/{id}/logs` shows what the source agent did (MCP `get_agent_logs`).
+    - `GET /v1/contact?listId=321` lists the leads it added (MCP `list_contacts`).
+    - `GET /v1/campaign/{id}/logs` shows invitations, messages, and replies (MCP `get_campaign_logs`).
+
+    Replies land in the LinkedIn inbox: see [Sync my LinkedIn Inbox](/tutorials/sync-linkedin-inbox).
+  </Step>
+</Steps>
+
+Every field is listed on [Create a list](/api-reference/lists/create-a-list), [Create a source agent](/api-reference/agents/create-a-source-agent), [Create a campaign](/api-reference/campaigns/create-a-campaign), and [Activate or deactivate a campaign](/api-reference/campaigns/status).
