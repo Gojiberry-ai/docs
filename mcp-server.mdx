@@ -1,0 +1,89 @@
+---
+title: "MCP"
+description: "Use Gojiberry from ChatGPT, Claude, Grok, Codex, and other AI assistants."
+icon: "sparkles"
+keywords: ["MCP", "Model Context Protocol", "ChatGPT", "Claude", "Grok", "Codex", "AI assistant", "connector"]
+---
+
+The Gojiberry MCP server connects your AI assistant to your Gojiberry account. Ask in plain language, and the assistant finds leads, checks buying signals, launches agents, and follows up on LinkedIn replies for you, using the same data and permissions as the app.
+
+- *"Who should I contact today, and why?"*
+- *"Summarize the LinkedIn replies I got this week and draft answers to the interested ones."*
+- *"Create a list, a source agent for Heads of Sales at French SaaS companies, and a campaign for it."*
+
+## How it works
+
+1. You add Gojiberry to your assistant with the server URL below.
+2. The assistant asks you to sign in to Gojiberry and approve the connection. No API key to copy.
+3. Gojiberry creates a key named **MCP - _app name_** in **Settings → API**. The assistant uses it for every call.
+4. When you ask something, the assistant picks the right Gojiberry tools, calls them, and answers with the results.
+
+```text
+https://mcp.gojiberry.ai/mcp
+```
+
+<Note>
+  The MCP server calls the same [external API](/quickstart) as your own scripts. It needs an active Gojiberry plan, and it shares your account's rate limits with your other keys.
+</Note>
+
+## Connect your assistant
+
+The same steps are on the **MCP** page of the app, in the sidebar under Settings.
+
+### Chat assistants
+
+<Columns cols={3}>
+  <Card title="ChatGPT" icon="/images/mcp/chatgpt.svg" href="https://chatgpt.com/plugins/plugin_asdk_app_6a9c0425ee3881919abb338060ba86ec" cta="Open in ChatGPT">
+    Open the Gojiberry app in ChatGPT, click **Connect**, then sign in to Gojiberry.
+  </Card>
+  <Card title="Claude" icon="/images/mcp/claude.svg" href="https://claude.ai/settings/connectors" cta="Open Claude settings">
+    Add a custom connector named Gojiberry with the server URL, click **Connect**, then sign in.
+  </Card>
+  <Card title="Grok" icon="/images/mcp/grok.svg" href="https://x.ai/bot/plugin/62120239" cta="Open in Grok">
+    Open the Gojiberry app in Grok, click **Connect**, then sign in to Gojiberry.
+  </Card>
+</Columns>
+
+### Developer tools
+
+**Codex.** Run this command, then sign in to Gojiberry in the browser window that opens.
+
+```bash
+codex mcp add gojiberry --url https://mcp.gojiberry.ai/mcp
+```
+
+**Other assistants.** Any assistant that supports remote MCP servers works: open its MCP or connector settings, add a server with the URL above, then sign in to Gojiberry when asked.
+
+<Info>
+  Gojiberry is listed in the ChatGPT and Grok app directories. Listings for Claude and the other assistants are coming; until then, use the server URL.
+</Info>
+
+## What the assistant can do
+
+Each tool maps to an [API reference](/api-reference/webhooks) endpoint. The assistant chooses tools on its own; you never call them by name.
+
+| Area | Tools |
+| --- | --- |
+| Contacts | `list_contacts`, `get_contact`, `create_contact`, `update_contact`, `reject_contact`, `unreject_contact`, `enrich_contact_email`, `enrich_contact_phone`, `get_intent_type_counts` |
+| Lists | `list_lists`, `get_list`, `create_list`, `add_contacts_to_list`, `remove_contacts_from_list` |
+| Source agents | `list_agents`, `get_agent`, `create_agent`, `update_agent`, `get_agent_logs` |
+| Campaigns | `list_campaigns`, `get_campaign`, `create_campaign`, `update_campaign`, `activate_campaign`, `pause_campaign`, `get_campaign_logs`, `list_email_seats` |
+| Directory | `get_directory_industries`, `search_leads`, `reveal_leads`, `search_companies`, `reveal_companies` |
+| LinkedIn inbox | `list_unibox_threads`, `get_unibox_thread_messages`, `send_unibox_message` |
+| Organization | `get_organization`, `list_organization_members`, `impersonate_user` |
+
+Tools that change data are flagged as such, so assistants that support it ask you before running them. `send_unibox_message` sends a real LinkedIn message and cannot be undone.
+
+## Credits
+
+Browsing your leads, signals, campaigns, and replies is free. Finding new leads (`reveal_leads`, `reveal_companies`) and enriching emails or phones use team credits, at the same price as the API.
+
+## Teams
+
+Organization owners can act for a member: ask the assistant to work "as" that member. It looks the member up with `list_organization_members`, then switches with `impersonate_user`. Everything after that runs on the member's data until you switch back.
+
+## Disconnect
+
+Delete the **MCP - _app name_** key in **Settings → API**. The assistant loses access right away. Reconnecting the same app creates the key again.
+
+Step-by-step screenshots are in the [Help Center guide](https://help.gojiberry.ai/en/articles/14540015-using-the-gojiberry-mcp-server).

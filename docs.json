@@ -21,6 +21,7 @@
         ]
       },
       "tutorials",
+      "mcp-server",
       {
         "group": "API reference",
         "pages": [
@@ -119,8 +120,7 @@
               "api-reference/unibox/download-attachment"
             ]
           }
-        ],
-        "openapi": "openapi.json"
+        ]
       },
       "tutorials/sync-linkedin-inbox",
       "tutorials/website-visitors",
