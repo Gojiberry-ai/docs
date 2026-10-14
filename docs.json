@@ -121,21 +121,7 @@
         ],
         "openapi": "openapi.json"
       }
-    ],
-    "global": {
-      "anchors": [
-        {
-          "anchor": "Documentation",
-          "href": "https://mintlify.com/docs",
-          "icon": "book-open-cover"
-        },
-        {
-          "anchor": "Blog",
-          "href": "https://mintlify.com/blog",
-          "icon": "newspaper"
-        }
-      ]
-    }
+    ]
   },
   "logo": {
     "light": "/images/GOJIBERRYLOGOTYPECOLORED(3).png",
@@ -146,7 +132,7 @@
     "links": [
       {
         "label": "Support",
-        "href": "mailto:hello@gojiberry.ai"
+        "href": "https://help.gojiberry.ai"
       }
     ],
     "primary": {
