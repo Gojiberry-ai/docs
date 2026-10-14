@@ -1,35 +1,98 @@
 ---
 title: "Sync my LinkedIn Inbox"
-description: "Example: read Unibox threads and messages so you can sync LinkedIn replies."
+description: "Read Unibox threads, then the messages in each thread."
 icon: "inbox"
-keywords: ["unibox", "linkedin", "inbox", "threads", "messages"]
+keywords:
+  - "unibox"
+  - "linkedin"
+  - "inbox"
+  - "threads"
+  - "messages"
 hidden: true
 ---
 
-Example. Pull LinkedIn conversations from Unibox, then read the messages in a thread.
+A sync is two calls. List the conversations, then read the messages in each one. Both responses are a page: `data` is the rows, and `total`, `page`, `limit`, and `totalPages` describe that page.
+
+Send `Authorization: Bearer YOUR_API_KEY`. The base URL is `https://ext.gojiberry.ai`.
 
 <Steps>
   <Step title="List threads">
-    `GET /v1/unibox/threads` returns conversations across your LinkedIn seats, newest first. Pass `seatId` to limit the sync to one seat, or `dateFrom` to fetch only what changed since the last run.
+    `GET /v1/unibox/threads` returns LinkedIn conversations, newest activity first. Omit `seatId` to include every LinkedIn seat on the account, or pass one seat id to sync that seat only. Pass `dateFrom` as an ISO date to keep threads whose last message is on or after that time.
 
     ```bash
     curl -H "Authorization: Bearer YOUR_API_KEY" \
       "https://ext.gojiberry.ai/v1/unibox/threads?limit=20&order=DESC"
     ```
 
-    Keep the thread `id` from each row. That id is what the next call expects.
+    ```json
+    {
+      "data": [
+        {
+          "id": 4812,
+          "lastMessage": "Thanks, let's talk next week.",
+          "lastMessageDate": "2026-10-13T18:04:11.000Z",
+          "lastMessageFullName": "Jane Doe",
+          "attendeeFullName": "Jane Doe",
+          "attendeeUrn": "urn:li:fsd_profile:ACoAAA...",
+          "seen": false,
+          "interested": true,
+          "contactId": 90210,
+          "seatId": 14,
+          "userId": 17
+        }
+      ],
+      "total": 128,
+      "page": 1,
+      "limit": 20,
+      "totalPages": 7
+    }
+    ```
+
+    Store `id`. That is the thread id the next call expects. It is not the LinkedIn `conversationUrn`.
+
+    `contactId` is set when the attendee matches a Gojiberry contact, and is null otherwise. `seen` is whether the thread has been opened. `interested` is the sentiment of the latest reply, and stays null until a reply has been classified. Walk `page` from 1 through `totalPages`.
   </Step>
-  <Step title="Read the messages">
-    For each thread you have not stored yet, call `GET /v1/unibox/threads/{threadId}/messages`.
+  <Step title="Read the messages in a thread">
+    `GET /v1/unibox/threads/{threadId}/messages` returns that thread's messages, oldest first. `threadId` is the `id` from the previous call.
 
     ```bash
     curl -H "Authorization: Bearer YOUR_API_KEY" \
-      "https://ext.gojiberry.ai/v1/unibox/threads/THREAD_ID/messages?limit=50"
+      "https://ext.gojiberry.ai/v1/unibox/threads/4812/messages?limit=50"
     ```
-  </Step>
-  <Step title="Send a reply, if you need to">
-    `POST /v1/unibox/messages/send-message` takes `chatId` (the thread `id` from the list) and `message`.
 
-    Full parameters are on [Get threads](/api-reference/unibox/get-threads), [Get messages](/api-reference/unibox/get-messages), and [Send a message](/api-reference/unibox/send-message).
+    ```json
+    {
+      "data": [
+        {
+          "id": 99001,
+          "threadId": 4812,
+          "senderFullName": "Jane Doe",
+          "senderIsSelf": false,
+          "content": "Thanks, let's talk next week.",
+          "deliveredAt": "2026-10-13T18:04:11.000Z",
+          "createdAt": "2026-10-13T18:04:20.000Z",
+          "attachments": [
+            {
+              "id": "att-1",
+              "name": "notes.pdf",
+              "type": "file",
+              "size": 20480,
+              "url": "https://www.linkedin.com/..."
+            }
+          ]
+        }
+      ],
+      "total": 6,
+      "page": 1,
+      "limit": 50,
+      "totalPages": 1
+    }
+    ```
+
+    `senderIsSelf` is true when the message was sent from your LinkedIn seat, and false when the other person sent it. `deliveredAt` is when LinkedIn delivered the message. `createdAt` is when Gojiberry stored the row, which can be later for older history. An attachment's `id`, together with the message `id`, is what [Download an attachment](/api-reference/unibox/download-attachment) expects.
+
+    On the next sync, pass the newest `lastMessageDate` you stored as `dateFrom` so you only pull threads that changed.
   </Step>
 </Steps>
+
+Every field is listed on [Get threads](/api-reference/unibox/get-threads) and [Get messages](/api-reference/unibox/get-messages).

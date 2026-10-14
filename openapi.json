@@ -2743,7 +2743,14 @@
         ],
         "responses": {
           "200": {
-            "description": "Paginated unibox threads retrieved successfully."
+            "description": "Paginated unibox threads retrieved successfully.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Unibox2ThreadsPageDto"
+                }
+              }
+            }
           }
         },
         "security": [
@@ -2813,7 +2820,14 @@
         ],
         "responses": {
           "200": {
-            "description": "Paginated unibox messages retrieved successfully."
+            "description": "Paginated unibox messages retrieved successfully.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Unibox2MessagesPageDto"
+                }
+              }
+            }
           }
         },
         "security": [
@@ -2878,7 +2892,14 @@
         },
         "responses": {
           "201": {
-            "description": "Message sent successfully."
+            "description": "Message sent successfully.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Unibox2Message"
+                }
+              }
+            }
           }
         },
         "security": [
@@ -2925,7 +2946,14 @@
         ],
         "responses": {
           "200": {
-            "description": "Attachment downloaded successfully, returned as base64 with its mime type."
+            "description": "Attachment downloaded successfully, returned as base64 with its mime type.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Unibox2AttachmentDownloadDto"
+                }
+              }
+            }
           },
           "404": {
             "description": "Message or attachment not found."
@@ -5013,6 +5041,299 @@
           "seen",
           "createdAt",
           "updatedAt"
+        ]
+      },
+      "Unibox2MessageAttachmentDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Attachment id, used by the download endpoint"
+          },
+          "url": {
+            "type": "string",
+            "description": "LinkedIn URL of the attachment"
+          },
+          "type": {
+            "type": "string",
+            "description": "Kind of attachment",
+            "enum": [
+              "img",
+              "video",
+              "audio",
+              "file",
+              "linkedin_post"
+            ]
+          },
+          "name": {
+            "type": "string",
+            "description": "File name"
+          },
+          "size": {
+            "type": "number",
+            "description": "Size in bytes"
+          }
+        },
+        "required": [
+          "id",
+          "url",
+          "type",
+          "name",
+          "size"
+        ]
+      },
+      "Unibox2Thread": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "number",
+            "description": "Incremental thread id"
+          },
+          "lastMessage": {
+            "type": "string",
+            "description": "Content of the last message in the thread",
+            "nullable": true
+          },
+          "lastMessageDate": {
+            "type": "string",
+            "description": "Date of the last message in the thread",
+            "format": "date-time",
+            "nullable": true
+          },
+          "lastMessageFullName": {
+            "type": "string",
+            "description": "Full name of the sender of the last message",
+            "nullable": true
+          },
+          "seen": {
+            "type": "boolean",
+            "description": "Whether the thread has been seen"
+          },
+          "attendeeUrn": {
+            "type": "string",
+            "description": "LinkedIn URN of the attendee (conversation partner)",
+            "nullable": true
+          },
+          "conversationUrn": {
+            "type": "string",
+            "description": "LinkedIn conversation URN",
+            "nullable": true
+          },
+          "attendeeFullName": {
+            "type": "string",
+            "description": "Full name of the attendee",
+            "nullable": true
+          },
+          "attendeeProfilePicture": {
+            "type": "string",
+            "description": "Profile picture URL of the attendee",
+            "nullable": true
+          },
+          "userId": {
+            "type": "number",
+            "description": "Owner user id"
+          },
+          "seatId": {
+            "type": "number",
+            "description": "LinkedIn seat id owning the thread",
+            "nullable": true
+          },
+          "interested": {
+            "type": "boolean",
+            "description": "Sentiment: whether the attendee is interested",
+            "nullable": true
+          },
+          "interestedReasoning": {
+            "type": "string",
+            "description": "Reasoning behind the interested classification",
+            "nullable": true
+          },
+          "aiGeneratedReply": {
+            "type": "string",
+            "description": "AI-generated draft reply for the operator to review",
+            "nullable": true
+          },
+          "contactId": {
+            "type": "number",
+            "description": "Linked Gojiberry contact id, when matched",
+            "nullable": true
+          },
+          "createdAt": {
+            "type": "string",
+            "description": "When the thread row was created",
+            "format": "date-time"
+          },
+          "updatedAt": {
+            "type": "string",
+            "description": "When the thread row was last updated",
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "id",
+          "seen",
+          "userId",
+          "createdAt",
+          "updatedAt"
+        ]
+      },
+      "Unibox2Message": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "number",
+            "description": "Incremental message id"
+          },
+          "threadId": {
+            "type": "number",
+            "description": "Parent thread id"
+          },
+          "userId": {
+            "type": "number",
+            "description": "Owner user id"
+          },
+          "seatId": {
+            "type": "number",
+            "description": "LinkedIn seat id that received/sent the message",
+            "nullable": true
+          },
+          "linkedinMessageBackendUrn": {
+            "type": "string",
+            "description": "LinkedIn's message backend URN (urn:li:messagingMessage:\u2026).",
+            "nullable": true
+          },
+          "senderUrn": {
+            "type": "string",
+            "description": "LinkedIn URN of the sender",
+            "nullable": true
+          },
+          "senderFullName": {
+            "type": "string",
+            "description": "Full name of the sender",
+            "nullable": true
+          },
+          "senderIsSelf": {
+            "type": "boolean",
+            "description": "True when the sender is the seat owner"
+          },
+          "content": {
+            "type": "string",
+            "description": "Message content",
+            "nullable": true
+          },
+          "attachments": {
+            "description": "Attachments attached to the message",
+            "nullable": true,
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Unibox2MessageAttachmentDto"
+            }
+          },
+          "deliveredAt": {
+            "type": "string",
+            "description": "Timestamp LinkedIn assigned when the message was delivered.",
+            "format": "date-time",
+            "nullable": true
+          },
+          "createdAt": {
+            "type": "string",
+            "description": "Timestamp the row was persisted in Gojiberry",
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "id",
+          "threadId",
+          "userId",
+          "senderIsSelf",
+          "createdAt"
+        ]
+      },
+      "Unibox2ThreadsPageDto": {
+        "type": "object",
+        "properties": {
+          "data": {
+            "description": "Threads on this page, ordered by last message date",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Unibox2Thread"
+            }
+          },
+          "total": {
+            "type": "number",
+            "description": "Number of threads matching the filters"
+          },
+          "page": {
+            "type": "number",
+            "description": "Page that was requested. Starts at 1."
+          },
+          "limit": {
+            "type": "number",
+            "description": "Page size that was requested"
+          },
+          "totalPages": {
+            "type": "number",
+            "description": "Number of pages for this filter"
+          }
+        },
+        "required": [
+          "data",
+          "total",
+          "page",
+          "limit",
+          "totalPages"
+        ]
+      },
+      "Unibox2MessagesPageDto": {
+        "type": "object",
+        "properties": {
+          "data": {
+            "description": "Messages on this page",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Unibox2Message"
+            }
+          },
+          "total": {
+            "type": "number",
+            "description": "Number of messages in the thread"
+          },
+          "page": {
+            "type": "number",
+            "description": "Page that was requested. Starts at 1."
+          },
+          "limit": {
+            "type": "number",
+            "description": "Page size that was requested"
+          },
+          "totalPages": {
+            "type": "number",
+            "description": "Number of pages in the thread"
+          }
+        },
+        "required": [
+          "data",
+          "total",
+          "page",
+          "limit",
+          "totalPages"
+        ]
+      },
+      "Unibox2AttachmentDownloadDto": {
+        "type": "object",
+        "properties": {
+          "base64": {
+            "type": "string",
+            "description": "Attachment bytes, base64-encoded"
+          },
+          "mimeType": {
+            "type": "string",
+            "description": "MIME type of the attachment"
+          }
+        },
+        "required": [
+          "base64",
+          "mimeType"
         ]
       }
     }
