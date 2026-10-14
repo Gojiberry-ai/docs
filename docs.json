@@ -1,0 +1,84 @@
+{
+  "$schema": "https://mintlify.com/docs.json",
+  "theme": "maple",
+  "name": "Mintlify Starter Kit",
+  "colors": {
+    "primary": "#FD8A6B",
+    "light": "#FEC288",
+    "dark": "#10171C"
+  },
+  "favicon": {
+    "light": "/images/0PsnqRXKIijGaB8ooIkfAThxHs(1).avif",
+    "dark": "/images/0PsnqRXKIijGaB8ooIkfAThxHs(1).avif"
+  },
+  "navigation": {
+    "pages": [
+      {
+        "group": "Getting Started",
+        "pages": [
+          "index",
+          "quickstart"
+        ]
+      }
+    ],
+    "global": {
+      "anchors": [
+        {
+          "anchor": "Documentation",
+          "href": "https://mintlify.com/docs",
+          "icon": "book-open-cover"
+        },
+        {
+          "anchor": "Blog",
+          "href": "https://mintlify.com/blog",
+          "icon": "newspaper"
+        }
+      ]
+    }
+  },
+  "logo": {
+    "light": "/images/GOJIBERRYLOGOTYPECOLORED(3).png",
+    "dark": "/images/GOJIBERRYLOGOTYPECOLOREDw(1).png",
+    "href": "https://gojiberry.ai"
+  },
+  "navbar": {
+    "links": [
+      {
+        "label": "Support",
+        "href": "mailto:hello@gojiberry.ai"
+      }
+    ],
+    "primary": {
+      "type": "button",
+      "label": "Dashboard",
+      "href": "https://app.gojiberry.ai"
+    }
+  },
+  "contextual": {
+    "options": [
+      "copy",
+      "view",
+      "chatgpt",
+      "claude",
+      "perplexity",
+      "mcp",
+      "cursor",
+      "vscode"
+    ]
+  },
+  "footer": {
+    "socials": {
+      "x": "https://x.com/mintlify",
+      "github": "https://github.com/mintlify",
+      "linkedin": "https://linkedin.com/company/mintlify"
+    }
+  },
+  "api": {
+    "url": "full",
+    "mdx": {
+      "auth": {
+        "method": "bearer"
+      }
+    }
+  }
+}
