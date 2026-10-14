@@ -22,12 +22,6 @@
       },
       "tutorials",
       {
-        "group": "Tutorials",
-        "icon": "book-open",
-        "pages": [],
-        "hidden": true
-      },
-      {
         "group": "API reference",
         "pages": [
           "api-reference/webhooks",
