@@ -1,0 +1,27 @@
+---
+title: "Tutorials"
+sidebarTitle: "All tutorials"
+description: "Example walkthroughs for common jobs with the Gojiberry API."
+icon: "book-open"
+keywords: ["tutorials", "examples", "unibox", "website visitors", "campaigns"]
+---
+
+Example walkthroughs for jobs people do with the API. Each one is a sketch: copy the calls, swap in your own ids, and adapt the flow.
+
+You need an API key from **Settings → API**. Send it as `Authorization: Bearer YOUR_API_KEY` to `https://ext.gojiberry.ai`. Authentication and rate limits are on the [Quickstart](/quickstart).
+
+<Columns cols={3}>
+  <Card title="Sync my LinkedIn Inbox" icon="inbox" href="/tutorials/sync-linkedin-inbox" cta="Open example">
+    Pull Unibox threads and the messages inside them, so a CRM or assistant stays current with LinkedIn replies.
+  </Card>
+  <Card title="Get website visitors" icon="mouse-pointer-click" href="/tutorials/website-visitors" cta="Open example">
+    Start a website-visitor source agent and read the contacts it adds to your list.
+  </Card>
+  <Card title="Check lead in campaign" icon="list-checks" href="/tutorials/lead-in-campaign" cta="Open example">
+    Find a contact and see how far a campaign has already taken them.
+  </Card>
+</Columns>
+
+<Note>
+  These pages are examples. Endpoint parameters, request bodies, and response fields live in the [API reference](/api-reference/webhooks).
+</Note>

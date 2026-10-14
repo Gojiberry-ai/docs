@@ -1,0 +1,34 @@
+---
+title: "Sync my LinkedIn Inbox"
+description: "Example: read Unibox threads and messages so you can sync LinkedIn replies."
+icon: "inbox"
+keywords: ["unibox", "linkedin", "inbox", "threads", "messages"]
+---
+
+Example. Pull LinkedIn conversations from Unibox, then read the messages in a thread.
+
+<Steps>
+  <Step title="List threads">
+    `GET /v1/unibox/threads` returns conversations across your LinkedIn seats, newest first. Pass `seatId` to limit the sync to one seat, or `dateFrom` to fetch only what changed since the last run.
+
+    ```bash
+    curl -H "Authorization: Bearer YOUR_API_KEY" \
+      "https://ext.gojiberry.ai/v1/unibox/threads?limit=20&order=DESC"
+    ```
+
+    Keep the thread `id` from each row. That id is what the next call expects.
+  </Step>
+  <Step title="Read the messages">
+    For each thread you have not stored yet, call `GET /v1/unibox/threads/{threadId}/messages`.
+
+    ```bash
+    curl -H "Authorization: Bearer YOUR_API_KEY" \
+      "https://ext.gojiberry.ai/v1/unibox/threads/THREAD_ID/messages?limit=50"
+    ```
+  </Step>
+  <Step title="Send a reply, if you need to">
+    `POST /v1/unibox/messages/send-message` takes `chatId` (the thread `id` from the list) and `message`.
+
+    Full parameters are on [Get threads](/api-reference/unibox/get-threads), [Get messages](/api-reference/unibox/get-messages), and [Send a message](/api-reference/unibox/send-message).
+  </Step>
+</Steps>
