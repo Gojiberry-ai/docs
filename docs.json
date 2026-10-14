@@ -22,6 +22,7 @@
       },
       "tutorials",
       "mcp-server",
+      "website-visitors-cookies",
       {
         "group": "API reference",
         "pages": [
