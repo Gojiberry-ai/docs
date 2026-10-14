@@ -21,6 +21,16 @@
         ]
       },
       {
+        "group": "Tutorials",
+        "icon": "book-open",
+        "pages": [
+          "tutorials",
+          "tutorials/sync-linkedin-inbox",
+          "tutorials/website-visitors",
+          "tutorials/lead-in-campaign"
+        ]
+      },
+      {
         "group": "API reference",
         "pages": [
           "api-reference/webhooks",
