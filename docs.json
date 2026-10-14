@@ -21,7 +21,7 @@
         ]
       },
       "tutorials",
-      "mcp",
+      "mcp-server",
       {
         "group": "API reference",
         "pages": [
@@ -153,7 +153,7 @@
       "chatgpt",
       "claude",
       "perplexity",
-      "mcp",
+      "mcp-server",
       "cursor",
       "vscode"
     ]
