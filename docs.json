@@ -177,7 +177,9 @@
     "mdx": {
       "auth": {
         "method": "bearer"
-      }
-    }
+      },
+      "server": "https://ext.gojiberry.ai"
+    },
+    "openapi": "https://ext.gojiberry.ai/openapi.json"
   }
 }
