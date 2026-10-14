@@ -1,17 +1,19 @@
 ---
 title: "Tutorials"
 sidebarTitle: "Tutorials"
-description: "Example walkthroughs for common jobs with the Gojiberry API."
+description: "Example walkthroughs for common jobs with the Gojiberry API and MCP server."
 icon: "book-open"
 keywords:
   - "tutorials"
   - "examples"
   - "unibox"
-  - "website visitors"
+  - "crm"
+  - "directory"
   - "campaigns"
+  - "mcp"
 ---
 
-Example walkthroughs for jobs people do with the API. Each one is a sketch: copy the calls, swap in your own ids, and adapt the flow.
+Example walkthroughs for jobs people do with the API and the [MCP server](/mcp-server). Each one is a sketch: copy the calls, swap in your own ids, and adapt the flow. Every step also names the MCP tool your AI assistant uses for it.
 
 You need an API key from **Settings → API**. Send it as `Authorization: Bearer YOUR_API_KEY` to `https://ext.gojiberry.ai`. Authentication and rate limits are on the [Quickstart](/quickstart).
 
@@ -19,11 +21,14 @@ You need an API key from **Settings → API**. Send it as `Authorization: Bearer
   <Card title="Sync my LinkedIn Inbox" icon="inbox" href="/tutorials/sync-linkedin-inbox" cta="Open example">
     Pull Unibox threads and the messages inside them, so a CRM or assistant stays current with LinkedIn replies.
   </Card>
-  <Card title="Get website visitors" icon="mouse-pointer-click" href="/tutorials/website-visitors" cta="Open example">
-    Start a website-visitor source agent and read the contacts it adds to your list.
+  <Card title="Two-way CRM sync" icon="arrows-rotate" href="/tutorials/crm-sync" cta="Open example">
+    Push CRM contacts and custom signals into Gojiberry, and mirror rejected leads back so nobody gets contacted twice.
   </Card>
-  <Card title="Check lead in campaign" icon="list-checks" href="/tutorials/lead-in-campaign" cta="Open example">
-    Find a contact and see how far a campaign has already taken them.
+  <Card title="A full outbound play from one prompt" icon="rocket" href="/tutorials/full-outbound-play" cta="Open example">
+    Create a list, a source agent for your ideal customer, and a campaign, then activate it.
+  </Card>
+  <Card title="Find leads in the Directory" icon="magnifying-glass" href="/tutorials/directory-search-reveal" cta="Open example">
+    Search the Directory for free with your criteria, then reveal the leads you want into a list.
   </Card>
 </Columns>
 

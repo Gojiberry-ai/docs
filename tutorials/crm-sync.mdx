@@ -1,0 +1,129 @@
+---
+title: "Two-way CRM sync"
+description: "Push CRM contacts and first-party signals into Gojiberry, and mirror rejected leads back so nobody gets contacted twice."
+icon: "arrows-rotate"
+keywords:
+  - "crm"
+  - "sync"
+  - "hubspot"
+  - "salesforce"
+  - "signals"
+  - "reject"
+  - "mcp"
+hidden: true
+---
+
+## Why sync both ways
+
+Your CRM knows who your customers, open deals, and opt-outs are. Gojiberry knows who your agents found, who replied, and who a teammate rejected. When the two disagree, the same person gets two first messages, or a customer gets a cold invitation.
+
+A two-way sync fixes that:
+
+- **CRM to Gojiberry.** Push the contacts you want to work, and the actions they take in your product (trial signup, demo booked), as signals next to the ones Gojiberry detects.
+- **Gojiberry to CRM.** Mark rejected leads in the CRM, with the reason, so no rep picks them up again.
+- **Both ways.** Reject in Gojiberry anyone your sales team already works, so campaigns skip them.
+
+Send `Authorization: Bearer YOUR_API_KEY`. The base URL is `https://ext.gojiberry.ai`. With the [MCP server](/mcp-server), your assistant runs the tools named in each step for you.
+
+<Steps>
+  <Step title="Push a CRM contact into Gojiberry">
+    `POST /v1/contact` creates the contact. `firstName`, `lastName`, and `profileUrl` (the LinkedIn profile) are required. Pass `listId` to drop the contact straight into the list a campaign reaches out to.
+
+    **MCP tool:** `create_contact`
+
+    ```bash
+    curl -X POST -H "Authorization: Bearer YOUR_API_KEY" \
+      -H "Content-Type: application/json" \
+      -d '{
+        "firstName": "Jane",
+        "lastName": "Doe",
+        "profileUrl": "https://www.linkedin.com/in/janedoe",
+        "email": "jane@acme.com",
+        "company": "Acme",
+        "jobTitle": "Head of Sales",
+        "listId": 321
+      }' \
+      "https://ext.gojiberry.ai/v1/contact"
+    ```
+
+    The response is the new contact. Store its `id` on the CRM record, in a field such as "Gojiberry ID": every following call needs it.
+
+    When the person is already in your workspace, or is in your excluded contacts, no contact is created and the response is a status instead:
+
+    ```json
+    { "success": false, "messageCode": "CONTACT_ALREADY_EXISTS" }
+    ```
+
+    `CONTACT_ALREADY_EXCLUDED` means the person is excluded, for example because their contact was deleted earlier, and stays blocked. For `CONTACT_ALREADY_EXISTS`, find the existing contact with `GET /v1/contact?search=jane@acme.com` (the search matches name, email, company, and job title) and store its `id`.
+  </Step>
+  <Step title="Push first-party signals">
+    `POST /v1/contact/{id}/signals` adds what the lead did in your product or stack, next to the signals Gojiberry agents detect. Describe the event in `intent`, add a short label in `intentKeyword`, and leave `intentType` empty.
+
+    **MCP tool:** none yet. Call the API from your CRM workflow, backend, Zapier, Make, or n8n.
+
+    ```bash
+    curl -X POST -H "Authorization: Bearer YOUR_API_KEY" \
+      -H "Content-Type: application/json" \
+      -d '{ "intent": "Booked a demo from the pricing page", "intentKeyword": "demo_booked" }' \
+      "https://ext.gojiberry.ai/v1/contact/90210/signals"
+    ```
+
+    The response is `{ "created": true, "contact": { ... } }`, with the contact's signals most recent first. A signal without `intentType` is recorded on every call, so send each event once: a retry adds a duplicate.
+  </Step>
+  <Step title="Keep campaigns away from people sales already works">
+    When a CRM contact becomes a customer, gets an open deal, or opts out, reject them in Gojiberry. `POST /v1/contact/{id}/reject` removes the contact from the review queue and from campaign scheduling. `contact_known_or_duplicate` is the reason for "already known".
+
+    **MCP tool:** `reject_contact`
+
+    ```bash
+    curl -X POST -H "Authorization: Bearer YOUR_API_KEY" \
+      -H "Content-Type: application/json" \
+      -d '{ "reason": "contact_known_or_duplicate" }' \
+      "https://ext.gojiberry.ai/v1/contact/90210/reject"
+    ```
+
+    Other reason codes cover a wrong company size, industry, location, title, or seniority, and `other` takes a free-text `reasonText`. A rejection is reversible with `POST /v1/contact/{id}/unreject` (MCP tool `unreject_contact`), which puts the contact back in the review queue, not in a campaign.
+
+    <Warning>
+      For people who must never be imported again, `DELETE /v1/contact/{id}` removes the contact and adds them to your excluded contacts, so agents skip them and `POST /v1/contact` refuses them. Deleting cannot be undone.
+    </Warning>
+  </Step>
+  <Step title="Mirror rejected leads back to the CRM">
+    Rejections made in Gojiberry, by a teammate in the review queue or through the API, carry `rejectedAt`, `rejectedByUserId`, `rejectionReason`, and `rejectionReasonText` on the contact. Read them with `GET /v1/contact`, a list at a time with `listId`, and copy every contact whose `rejectedAt` is set onto its CRM record.
+
+    **MCP tool:** `list_contacts`, or `get_contact` for one contact. Try asking: *"Which leads did my team reject this week, and why?"*
+
+    ```bash
+    curl -H "Authorization: Bearer YOUR_API_KEY" \
+      "https://ext.gojiberry.ai/v1/contact?listId=321&page=1&limit=100"
+    ```
+
+    ```json
+    {
+      "contacts": [
+        {
+          "id": 90210,
+          "fullName": "Jane Doe",
+          "email": "jane@acme.com",
+          "rejectedAt": "2026-10-13T09:12:44.000Z",
+          "rejectedByUserId": 17,
+          "rejectionReason": "company_wrong_size",
+          "rejectionReasonText": null
+        }
+      ],
+      "total": 240,
+      "page": 1,
+      "limit": 100,
+      "totalPages": 3
+    }
+    ```
+
+    Set the CRM record to "Disqualified" or "Do not contact", and keep the reason. Walk `page` through `totalPages`, and run the scan on a schedule, for example every night.
+
+    <Note>
+      The [webhook](/api-reference/webhooks) tells you when a contact is created or updated, which keeps the rest of the CRM record current. A rejection does not send it, so the scheduled scan is what catches rejections.
+    </Note>
+  </Step>
+</Steps>
+
+Every field is listed on [Create a contact](/api-reference/contacts/create-a-contact), [Add a signal](/api-reference/contacts/add-a-signal), [Reject a lead](/api-reference/contacts/reject-a-lead), and [List contacts](/api-reference/contacts/list-contacts).

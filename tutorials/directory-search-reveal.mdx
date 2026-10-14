@@ -1,0 +1,109 @@
+---
+title: "Find leads in the Directory"
+description: "Search the Directory for free with your criteria, then reveal the leads you want into a list."
+icon: "magnifying-glass"
+keywords:
+  - "directory"
+  - "search"
+  - "reveal"
+  - "leads"
+  - "credits"
+  - "mcp"
+hidden: true
+---
+
+## Why
+
+The Directory is Gojiberry's pool of B2B leads. Searching it is free and shows you who matches before you spend anything; you pay only for the leads you reveal. That makes it the fastest way to build a targeted list for a campaign, an account-based play, or a one-off export.
+
+With the [MCP server](/mcp-server), ask in plain language:
+
+> *"Find Heads of Sales in France at companies of 51 to 200 people that are hiring. Show me the first 25, then reveal the ones at SaaS companies into my 'Heads of Sales FR' list."*
+
+The assistant searches with `search_leads`, tells you how many credits the reveal uses, and waits for your approval before calling `reveal_leads`.
+
+Send `Authorization: Bearer YOUR_API_KEY`. The base URL is `https://ext.gojiberry.ai`.
+
+<Steps>
+  <Step title="Pick filter values (optional)">
+    `GET /v1/directory/industries` and `GET /v1/directory/locations` return the industry and location values the Directory uses, such as `"Software Development & SaaS"` or `"California, United States"`. Other values are accepted, but these give the best matches. Both calls are free.
+
+    **MCP tool:** `get_directory_industries`. Locations have no MCP tool yet; the assistant passes country or region names directly.
+  </Step>
+  <Step title="Search, for free">
+    `POST /v1/directory/leads/search` returns a page of matching leads. At least one filter is required.
+
+    **MCP tool:** `search_leads`
+
+    ```bash
+    curl -X POST -H "Authorization: Bearer YOUR_API_KEY" \
+      -H "Content-Type: application/json" \
+      -d '{
+        "jobTitle": ["Head of Sales", "VP Sales"],
+        "location": ["France"],
+        "companySize": ["51-200"],
+        "isCompanyHiring": true,
+        "limit": 25,
+        "page": 1
+      }' \
+      "https://ext.gojiberry.ai/v1/directory/leads/search"
+    ```
+
+    ```json
+    {
+      "leads": [
+        {
+          "id": 1234567890,
+          "firstName": "Jane",
+          "jobTitle": "Head of Sales",
+          "location": "Paris, France",
+          "industry": "Software Development & SaaS",
+          "lastName": "",
+          "company": "",
+          "profileUrl": ""
+        }
+      ],
+      "total": 1840,
+      "page": 1,
+      "limit": 25
+    }
+    ```
+
+    The preview fills only `id`, `firstName`, `jobTitle`, `location`, and `industry`; the other fields stay empty until you reveal. Results are deterministic, so the same filters and page always return the same leads. `limit` goes up to 100, and `total` is capped at 10,000.
+
+    Other filters: `industry`, `company`, `companyUrl`, `companyIdentifier`, `name`, and the signals `hasRecentlyChangedJob`, `hasRecentActivity`, `hasRecentFundingRound`, and `companyLastFundingRoundSince`.
+  </Step>
+  <Step title="Reveal the leads you want">
+    `POST /v1/directory/leads/reveal` returns the full leads for the `id`s you pick: last name, company, LinkedIn profile URL, website, and more. Pass `listId` to also save them as contacts in that list, at no extra cost.
+
+    **MCP tool:** `reveal_leads`
+
+    ```bash
+    curl -X POST -H "Authorization: Bearer YOUR_API_KEY" \
+      -H "Content-Type: application/json" \
+      -d '{ "ids": [1234567890, 987654321], "listId": 321 }' \
+      "https://ext.gojiberry.ai/v1/directory/leads/reveal"
+    ```
+
+    ```json
+    {
+      "leads": [ { "id": 1234567890, "firstName": "Jane", "lastName": "Doe", "company": "Acme", "profileUrl": "https://www.linkedin.com/in/janedoe" } ],
+      "requested": 2,
+      "revealed": 2,
+      "creditsUsed": 1,
+      "savedToList": 2
+    }
+    ```
+
+    Each revealed lead costs **0.5 credit**, and revealing the same lead again costs again, so keep what you revealed. Send up to 100 ids per call. If your credits don't cover every id, only the first ones are revealed and the response includes a `warning`.
+
+    With `listId`, leads already in your workspace, excluded, or without a first and last name are skipped, so `savedToList` can be lower than `revealed`. The save happens during the call: allow a longer HTTP timeout for large reveals.
+  </Step>
+  <Step title="Reach out">
+    Revealed leads have no email or phone. Get them per contact with `POST /v1/contact/{id}/enrich/email` and `POST /v1/contact/{id}/enrich/phone` (MCP `enrich_contact_email` and `enrich_contact_phone`), which use credits too.
+
+    To contact the list, attach it to a campaign: see [A full outbound play from one prompt](/tutorials/full-outbound-play).
+  </Step>
+</Steps>
+
+Every field is listed on [Search leads](/api-reference/directory/search-leads), [Reveal leads](/api-reference/directory/reveal-leads), [Industries](/api-reference/directory/industries), and [Locations](/api-reference/directory/locations).
