@@ -2,3 +2,15 @@
 title: "List contacts"
 openapi: "GET /v1/contact"
 ---
+
+Retrieve contacts with optional pagination, search, and filtering.
+
+```bash
+# Get all contacts
+curl -H "Authorization: Bearer YOUR_API_KEY" \
+     https://ext.gojiberry.ai/v1/contact
+
+# Get contacts with filtering
+curl -H "Authorization: Bearer YOUR_API_KEY" \
+     "https://ext.gojiberry.ai/v1/contact?search=john&agent=1&dateFrom=2024-01-01"
+```

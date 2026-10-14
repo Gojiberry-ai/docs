@@ -23,6 +23,7 @@
       {
         "group": "API reference",
         "pages": [
+          "api-reference/webhooks",
           {
             "group": "Status",
             "pages": [

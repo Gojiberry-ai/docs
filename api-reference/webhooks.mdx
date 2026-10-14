@@ -1,0 +1,54 @@
+---
+title: "Webhooks"
+description: "Receive contact create and update notifications, and verify their signatures."
+---
+
+Gojiberry can send real-time notifications when new contacts are created or updated, to a webhook URL you configure.
+
+## How to configure webhooks
+
+1. **Log in to your Gojiberry AI account** at [https://app.gojiberry.ai](https://app.gojiberry.ai)
+2. **Navigate to the Integrations page** at [https://app.gojiberry.ai/integrations](https://app.gojiberry.ai/integrations)
+3. **Add a Webhook integration** by clicking the Webhook option
+4. **Enter your webhook URL** where you want to receive notifications
+5. **Save the configuration**
+
+Once configured, Gojiberry sends POST requests to your webhook URL whenever:
+
+- A new contact is created
+- A contact is updated
+- Other relevant events occur in your account
+
+The webhook payload includes the full contact data in JSON format. Each webhook request includes a custom header `x-gojiberry-user-id` containing your user ID for verification purposes.
+
+## Verifying webhook signatures (optional)
+
+You can configure a signing secret on your Webhook integration. When a secret is set, every webhook request also includes:
+
+- `x-gojiberry-timestamp`: the Unix timestamp (in seconds) at which the request was sent
+- `x-gojiberry-signature`: `sha256=` followed by the hex-encoded HMAC-SHA256 of `{timestamp}.{rawBody}` computed with your signing secret
+
+To verify a request:
+
+1. Read the raw request body as a string (do not re-serialize parsed JSON).
+2. Concatenate the value of `x-gojiberry-timestamp`, a `.` character, and the raw body.
+3. Compute the HMAC-SHA256 of that string using your signing secret, hex-encoded, and prefix it with `sha256=`.
+4. Compare it to `x-gojiberry-signature` using a constant-time comparison.
+5. Reject requests whose timestamp is too old (we recommend a 5 minute tolerance) to prevent replay attacks.
+
+Example in Node.js:
+
+```js
+const crypto = require('crypto');
+
+function verifyGojiberrySignature(rawBody, headers, secret) {
+  const timestamp = headers['x-gojiberry-timestamp'];
+  const signature = headers['x-gojiberry-signature'];
+  if (!timestamp || !signature) return false;
+  if (Math.abs(Date.now() / 1000 - Number(timestamp)) > 300) return false;
+  const expected = 'sha256=' + crypto.createHmac('sha256', secret).update(timestamp + '.' + rawBody).digest('hex');
+  return expected.length === signature.length && crypto.timingSafeEqual(Buffer.from(expected), Buffer.from(signature));
+}
+```
+
+If no signing secret is configured, these headers are not sent.

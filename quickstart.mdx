@@ -1,47 +1,47 @@
 ---
 title: "Quickstart"
-description: "Begin with a guide on the fastest path to a successful outcome"
+description: "Authenticate, impersonate an organization member, and stay within rate limits."
 ---
 
-Describe how someone begins using your product. What is the first thing they need to do? Are there any prerequisites?
+## Authentication
 
-A quickstart should take someone from zero to using your product. They'll get a quick win and a sense of what they can accomplish.
+All API requests require authentication using a Bearer token. To get your API key:
 
-## Prerequisites
+1. **Log in to your Gojiberry AI account** at [https://app.gojiberry.ai](https://app.gojiberry.ai)
+2. **Navigate to Settings** → **API** section
+3. **Click "Create API Key"** to generate a new token
+4. **Copy the API key** when it's displayed (you won't be able to see it again)
+5. **Use the token** in your requests by adding the header: `Authorization: Bearer YOUR_API_KEY`
 
-Before you begin, you must have:
+## Impersonation (organization owners)
 
-- Requirement one (for example, Node.js 18+, a free account, an API key)
-- Requirement two (for example, a compatible device, a compatible browser, a compatible operating system)
+If your API key belongs to the **owner of an organization**, you can perform any API call on behalf of another member of your organization by adding the `x-impersonate-user-id` header with the member's user ID:
 
-## Get started
+```bash
+# Get the contacts of the organization member with user ID 123
+curl -H "Authorization: Bearer YOUR_API_KEY" \
+     -H "x-impersonate-user-id: 123" \
+     https://ext.gojiberry.ai/v1/contact
+```
 
-<Steps>
-  <Step title="Install">
-    Describe how to install your product or sign up.
+When impersonating, the request behaves exactly as if it was made by that member: you read and write their data (contacts, campaigns, lists, unibox, etc.).
 
-    ```bash
-    npm install your-package
-    ```
-  </Step>
-  <Step title="Configure">
-    Describe any setup or configuration needed before first use.
+Rules:
 
-    ```bash
-    your-cli init
-    ```
-  </Step>
-  <Step title="Run it">
-    Show the first thing a user does to see it working.
+- Your API key must belong to the **organization owner**; other members cannot impersonate.
+- The impersonated user must belong to the **same organization** as the API key user.
+- Requests that don't meet these rules are rejected with a `401 Unauthorized`.
 
-    ```bash
-    your-cli start
-    ```
-  </Step>
-</Steps>
+Tip: use `GET /v1/organization/members` to list the members of your organization and their user IDs, and `GET /v1/user/me` to verify which user the current request acts as.
 
-<Tip>
-  Give people a way to get help. This could be a link to a support page, a chat with a customer support agent, or a forum for your product.
+## Rate limits
 
-  Example: Need help? Reach out to us at [support@yourcompany.com](mailto:support@yourcompany.com).
-</Tip>
+- **100 requests per minute** per account. Short bursts above this are tolerated.
+- **100,000 requests per day** per account.
+- Limits are shared by all API keys and AI app (MCP) connections of the same user, including calls made on behalf of organization members with `x-impersonate-user-id`.
+- Requests over a limit return `429 Too Many Requests` with a `Retry-After` header (in seconds). Wait that long before retrying.
+- Some endpoints have their own lower limit, stated in their description.
+
+## Base URL
+
+**Production:** `https://ext.gojiberry.ai`
