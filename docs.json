@@ -24,11 +24,7 @@
       {
         "group": "Tutorials",
         "icon": "book-open",
-        "pages": [
-          "tutorials/sync-linkedin-inbox",
-          "tutorials/website-visitors",
-          "tutorials/lead-in-campaign"
-        ],
+        "pages": [],
         "hidden": true
       },
       {
@@ -131,7 +127,10 @@
           }
         ],
         "openapi": "openapi.json"
-      }
+      },
+      "tutorials/sync-linkedin-inbox",
+      "tutorials/website-visitors",
+      "tutorials/lead-in-campaign"
     ]
   },
   "logo": {
