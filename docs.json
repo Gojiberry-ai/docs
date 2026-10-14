@@ -118,7 +118,8 @@
               "api-reference/unibox/download-attachment"
             ]
           }
-        ]
+        ],
+        "openapi": "openapi.json"
       }
     ],
     "global": {
@@ -180,6 +181,7 @@
         "method": "bearer"
       },
       "server": "https://ext.gojiberry.ai"
-    }
+    },
+    "openapi": "openapi.json"
   }
 }
