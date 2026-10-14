@@ -26,7 +26,7 @@ The webhook payload includes the full contact data in JSON format. Each webhook 
 You can configure a signing secret on your Webhook integration. When a secret is set, every webhook request also includes:
 
 - `x-gojiberry-timestamp`: the Unix timestamp (in seconds) at which the request was sent
-- `x-gojiberry-signature`: `sha256=` followed by the hex-encoded HMAC-SHA256 of `\{timestamp\}.\{rawBody\}` computed with your signing secret
+- `x-gojiberry-signature`: `sha256=` followed by the hex-encoded HMAC-SHA256 of `{timestamp}.{rawBody}` computed with your signing secret
 
 To verify a request:
 
