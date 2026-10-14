@@ -12,10 +12,9 @@ keywords:
   - "cookiebot"
   - "onetrust"
   - "google tag manager"
-  - "snitcher"
 ---
 
-The Website visitors source identifies the **companies** that visit your site, never the person. It runs on a tracking script you install on your website. That script loads Snitcher's identification script, which stores a cookie in the visitor's browser. Where the law requires consent for that cookie (for example under the GDPR in Europe), start the identification only after the visitor accepts your cookie banner. This page shows how.
+The Website visitors source identifies the **companies** that visit your site, never the person. It runs on a tracking script you install on your website, which stores cookies in the visitor's browser. Where the law requires consent for cookies (for example under the GDPR in Europe), start the identification only after the visitor accepts your cookie banner. This page shows how.
 
 <Note>
   You are the data controller for your site. Before installing the script, Gojiberry asks you to confirm that you have a privacy notice, a consent mechanism, and the authority to install it.
@@ -23,18 +22,11 @@ The Website visitors source identifies the **companies** that visit your site, n
 
 ## What the script stores
 
-| Name | Type | Lifetime | Purpose |
-| --- | --- | --- | --- |
-| `snitcher_device_id` | First-party cookie on your domain | 1 year | Recognizes the same browser on its next visits |
-| `snitcher_session` | Browser storage | Current session | Groups the pages of one visit |
-| `snitcher_user_traits` | Browser storage | Until cleared | Only set when applicable |
-| `__sn_tld_probe` | Technical cookie | Deleted at once | Finds the domain to set the cookie on. Holds no data |
-
-The Gojiberry loader (`visitor.wv.gojiberry.ai/wv.js`) sets no cookie. With consent mode on, none of the items above exist until the visitor accepts.
+The script keeps first-party cookies on your domain for up to **1 year**, to recognize returning visitors. With consent mode on, it stores nothing until the visitor accepts.
 
 Example wording for your cookie policy:
 
-> We use Snitcher, through Gojiberry, to find out which companies visit our website. Snitcher matches visitors' IP addresses to the company they work for and records the pages they view, at the company level. To recognize a returning browser, it sets a first-party cookie named `snitcher_device_id`, kept for one year.
+> We use Gojiberry to find out which companies visit our website. Gojiberry matches visitors' IP addresses to the company they work for and records the pages they view, at the company level. It keeps first-party cookies for up to one year to recognize returning visitors.
 
 ## Start tracking only after consent
 
@@ -57,7 +49,7 @@ Your snippet is in Gojiberry, on the Website visitors source of your agent (**Ad
     <script async src="https://visitor.wv.gojiberry.ai/wv.js?uid=YOUR_USER_ID&aid=YOUR_AGENT_ID"></script>
     ```
 
-    With this line, the script loads but waits: Snitcher is not loaded and nothing is stored in the browser.
+    With this line, the script loads but waits: no identification runs and nothing is stored in the browser.
   </Step>
   <Step title="Call init() when the visitor accepts">
     In your cookie banner's "Accept" handler, call:
@@ -66,7 +58,7 @@ Your snippet is in Gojiberry, on the Website visitors source of your agent (**Ad
     window.GojiberryVisitors.init();
     ```
 
-    Snitcher then loads and starts identifying the visit. Ready-made examples for common banners are [below](#examples-by-cookie-banner).
+    The identification then starts. Ready-made examples for common banners are [below](#examples-by-cookie-banner).
   </Step>
   <Step title="Call it again on every page for returning visitors">
     The choice isn't remembered by Gojiberry: call `init()` on **every page load** where the visitor has already accepted. Most banners fire their accept event on page load when consent was given earlier; if yours doesn't, check its stored consent and call `init()` yourself.
@@ -76,7 +68,7 @@ Your snippet is in Gojiberry, on the Website visitors source of your agent (**Ad
 You can call `init()` at any time, even before `wv.js` has finished loading: the consent line remembers the call. Calling it twice does nothing more.
 
 <Warning>
-  Without the consent line, Snitcher starts as soon as the page loads and sets its cookie right away. Snitcher doesn't detect your cookie banner on its own here: the consent line is the only consent gate.
+  Without the consent line, the identification starts as soon as the page loads and sets its cookies right away. The script doesn't detect your cookie banner on its own: the consent line is the only consent gate.
 </Warning>
 
 ## Examples by cookie banner
@@ -145,13 +137,13 @@ Pick the consent category that your privacy notice lists company identification 
 
 Some setups block every third-party script until consent, for example a Google Tag Manager tag that fires only after consent, or a banner that only activates blocked scripts after "Accept". In that case, add the snippet **without** the consent line to that tag or blocked script. It then loads, and starts identifying, only once the visitor accepts.
 
-The difference: with the consent line, your site requests the Gojiberry loader on every page, and only Snitcher waits for consent. Loading the whole snippet after consent means no request goes to Gojiberry or Snitcher before "Accept".
+The difference: with the consent line, your site requests the Gojiberry loader on every page, and only the identification waits for consent. Loading the whole snippet after consent means no request goes to Gojiberry before "Accept".
 
 ## Check that it works
 
 1. Open your site in a private window and open the browser's developer tools.
-2. Before accepting, the **Network** tab shows `wv.js` but no `radar.min.js`, and **Application → Cookies** has no `snitcher_device_id`.
-3. Accept the banner: `radar.min.js` loads from `visitor.app.gojiberry.ai`, and `snitcher_device_id` appears.
+2. Before accepting, the **Network** tab shows `wv.js` but no request to `visitor.app.gojiberry.ai`, and **Application → Cookies** shows no new cookie on your domain.
+3. Accept the banner: a script loads from `visitor.app.gojiberry.ai`, and the cookies appear.
 
 The **Verify now** button in Gojiberry works without accepting the banner: it only checks that `wv.js` loads on your saved domains.
 
@@ -164,6 +156,6 @@ If your site sends a Content Security Policy header, allow these hosts:
 
 ## Good to know
 
-- **Withdrawn consent.** Once Snitcher has started on a page, it keeps running until the visitor leaves or reloads that page (on single-page sites, until a full reload). If your banner no longer calls `init()`, Snitcher doesn't start on the next pages. To also delete Snitcher's cookie at that moment, call `window.Gojiberry && window.Gojiberry.denyCookieConsent && window.Gojiberry.denyCookieConsent();`.
-- **Countries.** Snitcher only loads for visitors from the countries your agent targets. Other visitors receive an empty script, accepted banner or not.
+- **Withdrawn consent.** Once the identification has started on a page, it keeps running until the visitor leaves or reloads that page (on single-page sites, until a full reload). If your banner no longer calls `init()`, it doesn't start on the next pages. To also delete the cookies at that moment, call `window.Gojiberry && window.Gojiberry.denyCookieConsent && window.Gojiberry.denyCookieConsent();`.
+- **Countries.** The identification only runs for visitors from the countries your agent targets. Other visitors receive an empty script, accepted banner or not.
 - **Billing.** Consent changes nothing in billing: only a company's first identified visit is billed.
