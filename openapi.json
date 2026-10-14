@@ -3561,7 +3561,7 @@
           },
           "trackingScriptId": {
             "type": "string",
-            "description": "Snitcher tracking script ID, used as the profileId in the tracking snippet (website-visitor agents)",
+            "description": "Tracking script ID of the website-visitor agent",
             "nullable": true
           },
           "maxCreditUsage": {
