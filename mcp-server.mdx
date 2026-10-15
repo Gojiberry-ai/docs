@@ -22,6 +22,10 @@ The Gojiberry MCP server connects your AI assistant to your Gojiberry account. A
 https://mcp.gojiberry.ai/mcp
 ```
 
+<Warning>
+  Send a `User-Agent` header on every request. Requests that omit it are rejected with a `403` before they reach Gojiberry. Any non-empty value works, for example `User-Agent: my-app`.
+</Warning>
+
 <Note>
   The MCP server calls the same [external API](/quickstart) as your own scripts. It needs an active Gojiberry plan, and it shares your account's rate limits with your other keys.
 </Note>
