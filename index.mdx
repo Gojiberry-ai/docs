@@ -1,30 +1,32 @@
 ---
 title: "Introduction"
-description: "Programmatic access to your Gojiberry AI data."
+description: "Build on Gojiberry with the API and the MCP server."
 ---
 
-This API lets you access your Gojiberry AI data and integrate it with your applications.
+Gojiberry finds B2B leads that show buying signals, scores them with AI, and reaches out to them on LinkedIn and by email. The API and the MCP server give you the same data and actions as the app, so you can connect Gojiberry to your CRM, your own product, an automation tool, or an AI assistant.
 
-## How it works
+With them you can:
 
-Gojiberry runs your outreach as a pipeline of three building blocks:
+- Read and update your contacts, their signals, and their scores.
+- Create lists, source agents, and campaigns, and follow their results.
+- Search the Directory and reveal new leads.
+- Read and answer your LinkedIn conversations.
+- Get notified in real time with webhooks.
 
-1. **Source agent — the lead finder.** A source agent continuously sources leads matching your targeting criteria (job titles, industries, locations, signals, ...) and scores them with AI.
-2. **List — where the leads land.** Every source agent is linked to a list (`listId` is required when creating an agent): the leads it finds are imported as contacts into that list. Lists can also be filled by importing contacts yourself.
-3. **Campaign — the outreach.** A campaign uses one or more lists as its lead source (`listIds` is required when creating a campaign) and runs its steps (LinkedIn invitations, messages, emails, ...) on the contacts of those lists, sending through your LinkedIn and/or email seats. Once activated, the campaign runs the outreach automatically on a daily basis.
-
-**Terminology.** In the Gojiberry platform, an **Agent** is a _campaign agent_ — the campaign that performs the outreach. A **source agent** is the lead finder that sources the leads. The two are linked through a **list**: the source agent imports the leads it finds into the list, and the campaign agent reaches out to the contacts of that list.
-
-**Best practice: create a Full Cycle agent.** Always create the three resources in this order — first the list, then the source agent that fills it, then the campaign that reaches out to it. Together, the list + source agent + campaign agent form a **Full Cycle agent**: leads are sourced and outreached automatically, end to end. If you create a source agent without a campaign agent, it shows up as a **legacy agent** in the platform: it only sources leads and does **no outreach**. So it's best practice to always create all three.
-
-A typical setup through the API:
-
-```text
-POST /v1/list                  # 1. create the list
-POST /v1/agent                 # 2. create the source agent (lead finder) linked to that list (listId)
-POST /v1/campaign              # 3. create the campaign agent using that list as lead source (listIds)
-GET  /v1/campaign/{id}/logs    # 4. follow the outreach activity
-```
+<Columns cols={2}>
+  <Card title="Quickstart" icon="rocket" href="/quickstart">
+    Get an API key, authenticate, and learn the rate limits.
+  </Card>
+  <Card title="Core concepts" icon="diagram-project" href="/core-concepts">
+    How source agents, lists, and campaigns fit together.
+  </Card>
+  <Card title="Tutorials" icon="book-open" href="/tutorials">
+    Step-by-step examples: inbox sync, CRM sync, outbound plays, and more.
+  </Card>
+  <Card title="MCP" icon="sparkles" href="/mcp-server">
+    Use Gojiberry from ChatGPT, Claude, Grok, and other AI assistants.
+  </Card>
+</Columns>
 
 ## Base URL
 
