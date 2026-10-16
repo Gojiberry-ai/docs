@@ -763,7 +763,7 @@
     },
     "/v1/contact/{id}/enrich/email/async": {
       "post": {
-        "description": "Starts an email enrichment for the given contact and returns immediately, without waiting for the enrichment providers to respond. Recommended over the synchronous route for AI/MCP integrations and any client that cannot hold a long-running HTTP connection. To verify completion, poll GET /v1/contact/{id}: the enrichment is done once emailEnriched is true \u2014 the email field is then filled if an email was found, and stays empty otherwise. Each enrichment that finds an email consumes 1 credit; failed enrichments do not consume any credit.",
+        "description": "Starts an email enrichment for the given contact and returns immediately, without waiting for the enrichment providers to respond. Recommended over the synchronous route for AI/MCP integrations and any client that cannot hold a long-running HTTP connection. To verify completion, poll GET /v1/contact/{id}: the enrichment is done once emailEnriched is true — the email field is then filled if an email was found, and stays empty otherwise. Each enrichment that finds an email consumes 1 credit; failed enrichments do not consume any credit.",
         "operationId": "ContactExternalController_enrichEmailAsync",
         "parameters": [
           {
@@ -829,7 +829,7 @@
     },
     "/v1/contact/{id}/enrich/phone/async": {
       "post": {
-        "description": "Starts a mobile phone enrichment for the given contact and returns immediately, without waiting for the enrichment providers to respond. Recommended over the synchronous route for AI/MCP integrations and any client that cannot hold a long-running HTTP connection. To verify completion, poll GET /v1/contact/{id}: the enrichment is done once phoneEnriched is true \u2014 the phone field is then filled if a phone was found, and stays empty otherwise. Each enrichment that finds a phone number consumes 10 credits; failed enrichments do not consume any credit.",
+        "description": "Starts a mobile phone enrichment for the given contact and returns immediately, without waiting for the enrichment providers to respond. Recommended over the synchronous route for AI/MCP integrations and any client that cannot hold a long-running HTTP connection. To verify completion, poll GET /v1/contact/{id}: the enrichment is done once phoneEnriched is true — the phone field is then filled if a phone was found, and stays empty otherwise. Each enrichment that finds a phone number consumes 10 credits; failed enrichments do not consume any credit.",
         "operationId": "ContactExternalController_enrichPhoneAsync",
         "parameters": [
           {
@@ -985,7 +985,7 @@
     },
     "/v1/contact/{id}/unreject": {
       "post": {
-        "description": "Reverses a rejection: clears rejectedAt, rejectedByUserId and the stored reason, putting the contact back in the review queue. This does not approve the lead \u2014 readyForCampaign is reset to false, so the contact still needs to be accepted (e.g. by updating it with readyForCampaign set to true) before it is picked up by a campaign. Note that because readyForCampaign is always reset, calling this route on an approved contact moves it back to the review queue.",
+        "description": "Reverses a rejection: clears rejectedAt, rejectedByUserId and the stored reason, putting the contact back in the review queue. This does not approve the lead — readyForCampaign is reset to false, so the contact still needs to be accepted (e.g. by updating it with readyForCampaign set to true) before it is picked up by a campaign. Note that because readyForCampaign is always reset, calling this route on an approved contact moves it back to the review queue.",
         "operationId": "ContactExternalController_unreject",
         "parameters": [
           {
@@ -1105,7 +1105,7 @@
     },
     "/v1/campaign": {
       "post": {
-        "description": "Create a campaign with its steps, lead source lists and sending seats. A campaign is the **campaign agent** \u2014 the outreach half of a **Full Cycle agent**: create the list first (`POST /v1/list`), then the source agent that fills it with leads (`POST /v1/agent`), then this campaign to reach out to them. **At least one list (lead source) is required.** The campaign reaches out to the contacts of its lists; lists are typically filled by a source agent (the lead finder, see `POST /v1/agent`) or by importing contacts. If the campaign contains any LinkedIn step (invitation, invitationNote, message, voiceMessage, visitProfile, likePosts), a `linkedinSeatId` is required. If it contains email steps, at least one `emailSeatId` is required; multiple email seats (up to 100) are only allowed when the campaign has email steps exclusively. Step rules: at most one Connection Request step, an invitation cannot come after a LinkedIn message or voice message, and `delayAfterLastStep` must be at least 1 day (see the `steps` field for per-type fields and limits). When the campaign has a Connection Request step, 1st-degree connections are excluded from the campaign by default. **Once activated, the campaign starts the outreach automatically on a daily basis.** The launch hours can be configured in the LinkedIn seat settings.",
+        "description": "Create a campaign with its steps, lead source lists and sending seats. A campaign is the **campaign agent** — the outreach half of a **Full Cycle agent**: create the list first (`POST /v1/list`), then the source agent that fills it with leads (`POST /v1/agent`), then this campaign to reach out to them. **At least one list (lead source) is required.** The campaign reaches out to the contacts of its lists; lists are typically filled by a source agent (the lead finder, see `POST /v1/agent`) or by importing contacts. If the campaign contains any LinkedIn step (invitation, invitationNote, message, voiceMessage, visitProfile, likePosts), a `linkedinSeatId` is required. If it contains email steps, at least one `emailSeatId` is required; multiple email seats (up to 100) are only allowed when the campaign has email steps exclusively. Step rules: at most one Connection Request step, an invitation cannot come after a LinkedIn message or voice message, and `delayAfterLastStep` must be at least 1 day (see the `steps` field for per-type fields and limits). When the campaign has a Connection Request step, 1st-degree connections are excluded from the campaign by default. **Once activated, the campaign starts the outreach automatically on a daily basis.** The launch hours can be configured in the LinkedIn seat settings.",
         "operationId": "CampaignExternalController_create",
         "parameters": [
           {
@@ -1459,6 +1459,162 @@
         ]
       }
     },
+    "/v1/campaign/{id}/queue": {
+      "get": {
+        "description": "**For LinkedIn and multi-channel campaigns** (campaigns with a LinkedIn seat). For email-only campaigns, use `GET /v1/campaign/{id}/email-queue`. Returns the actions queued for this campaign, as shown in the Scheduled tab of the app: one entry per contact with the step to run (invitation, invitationNote, message, voiceMessage, visitProfile, likePosts or email), its message filled with the contact variables, and the last step the contact already received. The queue is capped at the LinkedIn seat's full daily quotas (today's LinkedIn actions are not subtracted), shared between the campaigns running on the same LinkedIn seat, and at the remaining daily quota of the email seats, divided between the active campaigns using each email seat. **Preview only:** it lists the contacts already scheduled by the hourly planner. It sends nothing and does not pull new contacts into the campaign, generate AI messages, or look up emails, so no credit is spent. As on the campaign page, the planner still updates the contacts it reads: a contact with no step left is marked finished, a step it cannot perform (no email, unsubscribed, no LinkedIn profile) is marked skipped or the contact excluded, and a blocklisted company is flagged. An inactive campaign has an empty queue.",
+        "operationId": "CampaignExternalController_findQueue",
+        "parameters": [
+          {
+            "name": "x-impersonate-user-id",
+            "in": "header",
+            "description": "ID of an organization member to act on behalf of. The API key user must be the owner of the organization and the target user must belong to the same organization.",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Scheduled actions of the campaign",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "contact": {
+                        "type": "object",
+                        "description": "The contact the step will be performed on"
+                      },
+                      "campaign": {
+                        "type": "object",
+                        "description": "The campaign"
+                      },
+                      "campaignStep": {
+                        "type": "object",
+                        "description": "The step to perform, with its message filled with the contact variables"
+                      },
+                      "lastContactStep": {
+                        "type": "object",
+                        "nullable": true,
+                        "description": "The last step already performed on the contact, absent for a contact entering the campaign"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The campaign is email-only: use `GET /v1/campaign/{id}/email-queue`"
+          },
+          "404": {
+            "description": "Campaign not found"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Get the scheduled queue of a LinkedIn or multi-channel campaign",
+        "tags": [
+          "Campaigns"
+        ]
+      }
+    },
+    "/v1/campaign/{id}/email-queue": {
+      "get": {
+        "description": "**For email-only campaigns** (every step is an email, no LinkedIn seat). For LinkedIn and multi-channel campaigns, use `GET /v1/campaign/{id}/queue`. Returns the emails queued for this campaign, as shown in the Scheduled tab of the app: one entry per contact with the email step to send (subject and body filled with the contact variables), the last step the contact already received, the email seat that will send it and whether it starts a new thread. The queue is capped at the remaining daily sending quota of the campaign email seats. **Preview only:** it lists the contacts already scheduled by the hourly planner. It sends nothing and does not pull new contacts into the campaign, generate AI messages, or look up emails, so no credit is spent. As on the campaign page, the planner still updates the contacts it reads: a contact with no step left is marked finished, a step it cannot perform (no email, unsubscribed) is marked skipped, and a blocklisted company is flagged. An inactive campaign has an empty queue.",
+        "operationId": "CampaignExternalController_findEmailQueue",
+        "parameters": [
+          {
+            "name": "x-impersonate-user-id",
+            "in": "header",
+            "description": "ID of an organization member to act on behalf of. The API key user must be the owner of the organization and the target user must belong to the same organization.",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Scheduled emails of the campaign",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "contact": {
+                        "type": "object",
+                        "description": "The contact the email will be sent to"
+                      },
+                      "campaign": {
+                        "type": "object",
+                        "description": "The campaign"
+                      },
+                      "campaignStep": {
+                        "type": "object",
+                        "description": "The email step to send, with subject and message filled with the contact variables"
+                      },
+                      "lastContactStep": {
+                        "type": "object",
+                        "nullable": true,
+                        "description": "The last step already performed on the contact, absent for a contact entering the campaign"
+                      },
+                      "emailSeatId": {
+                        "type": "number",
+                        "description": "The email seat (mailbox) that will send the email"
+                      },
+                      "sendAsNewThread": {
+                        "type": "boolean",
+                        "description": "true when the email starts a new thread instead of replying to the previous one"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The campaign is not email-only: use `GET /v1/campaign/{id}/queue`"
+          },
+          "404": {
+            "description": "Campaign not found"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Get the scheduled queue of an email-only campaign",
+        "tags": [
+          "Campaigns"
+        ]
+      }
+    },
     "/v1/campaign/{id}/status": {
       "patch": {
         "description": "Set the campaign `active` flag. An active campaign is included in the daily outreach scheduling; a deactivated campaign stops sending new steps (messages and invitations already sent are not retracted). Activating requires free campaign capacity: each account can run 2 campaigns, plus one per assigned Full-cycle Agent add-on. If the account is at capacity, an Full-cycle Agent add-on from the organization is assigned automatically; otherwise the request fails with 400. This endpoint is rate limited to 10 requests per minute.",
@@ -1652,7 +1808,7 @@
     },
     "/v1/agent": {
       "post": {
-        "description": "Create a new source agent (the lead finder) for the authenticated user. **A list is mandatory: the agent imports the leads it sources into a list, so you must create a list first (`POST /v1/list`) and link it to the agent through the required `listId` field.** If the active agent limit is reached, the agent is still created but paused. A source agent only finds leads \u2014 it does no outreach. Without a campaign agent attached to the same list, it shows up as a **legacy agent** in the platform. Best practice is to follow up with `POST /v1/campaign` using the same list as lead source, forming a **Full Cycle agent** (list + source agent + campaign agent) that sources and reaches out to leads automatically.\n\n**Signals (`variables`)**: the agent finds leads through its signals. `variables` is optional, but when sent it must hold 4 to 15 signals, and an \"autopilot\" agent created without it is accepted but has nothing to run. Each signal is a `{ \"type\", \"value\" }` object, and **the `value` format depends on the `type`**: a quoted keyword of 1 to 3 words for `SEARCH_KEYWORD` (`\"\\\"cold email\\\"\"`), a LinkedIn company page URL for `COMPETITOR_PAGE_URL` (`https://www.linkedin.com/company/lemlist`), a LinkedIn profile URL for `INFLUENCER_PAGE_URL` (`https://www.linkedin.com/in/johndoe`), the literal `\"true\"` for event signals (`RECENTLY_CHANGED_JOB`, `HIRING`, ...), and a lowercase technology name for `TECHNOLOGY` (`hubspot`). `VISITED_PROFILE` and `YOUR_COMPANY_FOLLOWERS` also need `needsUserToken: true` and a `linkedinSeatId`. The API does not validate values: a malformed keyword, URL, or technology is saved anyway, and that signal then finds no leads or the wrong ones. The `value` field of the variable schema lists the exact format for every type.",
+        "description": "Create a new source agent (the lead finder) for the authenticated user. **A list is mandatory: the agent imports the leads it sources into a list, so you must create a list first (`POST /v1/list`) and link it to the agent through the required `listId` field.** If the active agent limit is reached, the agent is still created but paused. A source agent only finds leads — it does no outreach. Without a campaign agent attached to the same list, it shows up as a **legacy agent** in the platform. Best practice is to follow up with `POST /v1/campaign` using the same list as lead source, forming a **Full Cycle agent** (list + source agent + campaign agent) that sources and reaches out to leads automatically.\n\n**Signals (`variables`)**: the agent finds leads through its signals. `variables` is optional, but when sent it must hold 4 to 15 signals, and an \"autopilot\" agent created without it is accepted but has nothing to run. Each signal is a `{ \"type\", \"value\" }` object, and **the `value` format depends on the `type`**: a quoted keyword of 1 to 3 words for `SEARCH_KEYWORD` (`\"\\\"cold email\\\"\"`), a LinkedIn company page URL for `COMPETITOR_PAGE_URL` (`https://www.linkedin.com/company/lemlist`), a LinkedIn profile URL for `INFLUENCER_PAGE_URL` (`https://www.linkedin.com/in/johndoe`), the literal `\"true\"` for event signals (`RECENTLY_CHANGED_JOB`, `HIRING`, ...), and a lowercase technology name for `TECHNOLOGY` (`hubspot`). `VISITED_PROFILE` and `YOUR_COMPANY_FOLLOWERS` also need `needsUserToken: true` and a `linkedinSeatId`. The API does not validate values: a malformed keyword, URL, or technology is saved anyway, and that signal then finds no leads or the wrong ones. The `value` field of the variable schema lists the exact format for every type.",
         "operationId": "AgentExternalController_create",
         "parameters": [
           {
@@ -1852,7 +2008,7 @@
         ]
       },
       "delete": {
-        "description": "Permanently delete a source agent. The agent stops sourcing immediately and its run logs (`GET /v1/agent/{id}/logs`) are deleted with it. The list the agent imports into and the leads already imported are **not** deleted. For website-visitor agents, the website tracking script is deactivated. **Deletion cannot be undone** \u2014 to stop an agent temporarily, use `PATCH /v1/agent/{id}` with `{ \"paused\": true }` instead.",
+        "description": "Permanently delete a source agent. The agent stops sourcing immediately and its run logs (`GET /v1/agent/{id}/logs`) are deleted with it. The list the agent imports into and the leads already imported are **not** deleted. For website-visitor agents, the website tracking script is deactivated. **Deletion cannot be undone** — to stop an agent temporarily, use `PATCH /v1/agent/{id}` with `{ \"paused\": true }` instead.",
         "operationId": "AgentExternalController_delete",
         "parameters": [
           {
@@ -2107,7 +2263,7 @@
     },
     "/v1/directory/leads/search": {
       "post": {
-        "description": "Search the lead pool with filters. Free of charge: only id, firstName, jobTitle, location and industry are filled \u2014 all other fields are returned empty. Use `POST /v1/directory/leads/reveal` with the returned ids to get the full lead data (0.5 credit per lead). Results are deterministic (no randomness), so the same filters + page always return the same leads.",
+        "description": "Search the lead pool with filters. Free of charge: only id, firstName, jobTitle, location and industry are filled — all other fields are returned empty. Use `POST /v1/directory/leads/reveal` with the returned ids to get the full lead data (0.5 credit per lead). Results are deterministic (no randomness), so the same filters + page always return the same leads.",
         "operationId": "DirectoryExternalController_search",
         "parameters": [
           {
@@ -2275,7 +2431,7 @@
     },
     "/v1/directory/leads/reveal": {
       "post": {
-        "description": "Return the full data of the leads with the given ids (from `POST /v1/directory/leads/search`). Each revealed lead costs 0.5 credit. If the credit balance cannot cover all requested ids, only the first affordable leads are revealed and charged. When `listId` is provided, the revealed leads are also saved as contacts into that list (no extra credit cost): leads already in the workspace, excluded, or missing a first/last name are skipped. The save is synchronous, so a large reveal with `listId` can take noticeably longer \u2014 configure your HTTP client timeout accordingly.",
+        "description": "Return the full data of the leads with the given ids (from `POST /v1/directory/leads/search`). Each revealed lead costs 0.5 credit. If the credit balance cannot cover all requested ids, only the first affordable leads are revealed and charged. When `listId` is provided, the revealed leads are also saved as contacts into that list (no extra credit cost): leads already in the workspace, excluded, or missing a first/last name are skipped. The save is synchronous, so a large reveal with `listId` can take noticeably longer — configure your HTTP client timeout accordingly.",
         "operationId": "DirectoryExternalController_reveal",
         "parameters": [
           {
@@ -2374,7 +2530,7 @@
     },
     "/v1/directory/companies/search": {
       "post": {
-        "description": "Search the company pool with filters. Free of charge: only id, size, industry and headquarters are filled \u2014 all other fields are returned empty. Use `POST /v1/directory/companies/reveal` with the returned ids to get the full company data (0.5 credit per company). Results are deterministic (no randomness), so the same filters + page always return the same companies. Disclaimer: a company \"uses\" a technology when we saw that technology mentioned in at least one of the company's job offers in the past months, or in the website sources. It signals the company hires for or runs that technology, not a verified install base.",
+        "description": "Search the company pool with filters. Free of charge: only id, size, industry and headquarters are filled — all other fields are returned empty. Use `POST /v1/directory/companies/reveal` with the returned ids to get the full company data (0.5 credit per company). Results are deterministic (no randomness), so the same filters + page always return the same companies. Disclaimer: a company \"uses\" a technology when we saw that technology mentioned in at least one of the company's job offers in the past months, or in the website sources. It signals the company hires for or runs that technology, not a verified install base.",
         "operationId": "DirectoryExternalController_searchCompanies",
         "parameters": [
           {
@@ -2591,7 +2747,6 @@
     },
     "/v1/unibox/contact/{contactId}": {
       "get": {
-        "description": "Legacy endpoint. Returns all unibox chats (with their messages) associated with the given contact for the authenticated user.",
         "operationId": "UniboxExternalController_getMessagesByContactId",
         "parameters": [
           {
@@ -2614,20 +2769,7 @@
         ],
         "responses": {
           "200": {
-            "description": "List of unibox chats for the contact, ordered by most recent message first",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/Unibox"
-                  }
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "Contact not found"
+            "description": ""
           }
         },
         "security": [
@@ -2635,7 +2777,6 @@
             "bearer": []
           }
         ],
-        "summary": "Legacy - Get unibox chats and messages for a contact",
         "tags": [
           "Unibox"
         ]
@@ -3449,7 +3590,7 @@
   },
   "info": {
     "title": "Gojiberry AI - External API",
-    "description": "\n# Gojiberry AI External API\n\nThis API allows you to programmatically access your Gojiberry AI data and integrate it with your applications.\n\n## How it works\n\nGojiberry runs your outreach as a pipeline of three building blocks:\n\n1. **Source agent \u2014 the lead finder.** A source agent continuously sources leads matching your targeting criteria (job titles, industries, locations, signals, ...) and scores them with AI.\n2. **List \u2014 where the leads land.** Every source agent is linked to a list (`listId` is required when creating an agent): the leads it finds are imported as contacts into that list. Lists can also be filled by importing contacts yourself.\n3. **Campaign \u2014 the outreach.** A campaign uses one or more lists as its lead source (`listIds` is required when creating a campaign) and runs its steps (LinkedIn invitations, messages, emails, ...) on the contacts of those lists, sending through your LinkedIn and/or email seats. Once activated, the campaign runs the outreach automatically on a daily basis.\n\n**Terminology.** In the Gojiberry platform, an **Agent** is a *campaign agent* \u2014 the campaign that performs the outreach. A **source agent** is the lead finder that sources the leads. The two are linked through a **list**: the source agent imports the leads it finds into the list, and the campaign agent reaches out to the contacts of that list.\n\n**Best practice: create a Full Cycle agent.** Always create the three resources in this order \u2014 first the list, then the source agent that fills it, then the campaign that reaches out to it. Together, the list + source agent + campaign agent form a **Full Cycle agent**: leads are sourced and outreached automatically, end to end. If you create a source agent without a campaign agent, it shows up as a **legacy agent** in the platform: it only sources leads and does **no outreach**. So it's best practice to always create all three.\n\nA typical setup through the API:\n\n```text\nPOST /v1/list                  # 1. create the list\nPOST /v1/agent                 # 2. create the source agent (lead finder) linked to that list (listId)\nPOST /v1/campaign              # 3. create the campaign agent using that list as lead source (listIds)\nGET  /v1/campaign/{id}/logs    # 4. follow the outreach activity\n```\n\n## Authentication\n\nAll API requests require authentication using a Bearer token. To get your API key:\n\n1. **Log in to your Gojiberry AI account** at [https://app.gojiberry.ai](https://app.gojiberry.ai)\n2. **Navigate to Settings** \u2192 **API** section\n3. **Click \"Create API Key\"** to generate a new token\n4. **Copy the API key** when it's displayed (you won't be able to see it again)\n5. **Use the token** in your requests by adding the header: `Authorization: Bearer YOUR_API_KEY`\n\n## Impersonation (organization owners)\n\nIf your API key belongs to the **owner of an organization**, you can perform any API call on behalf of another member of your organization by adding the `x-impersonate-user-id` header with the member's user ID:\n\n```bash\n# Get the contacts of the organization member with user ID 123\ncurl -H \"Authorization: Bearer YOUR_API_KEY\" \\\n     -H \"x-impersonate-user-id: 123\" \\\n     https://ext.gojiberry.ai/v1/contact\n```\n\nWhen impersonating, the request behaves exactly as if it was made by that member: you read and write their data (contacts, campaigns, lists, unibox, etc.).\n\nRules:\n- Your API key must belong to the **organization owner**; other members cannot impersonate.\n- The impersonated user must belong to the **same organization** as the API key user.\n- Requests that don't meet these rules are rejected with a `401 Unauthorized`.\n\nTip: use `GET /v1/organization/members` to list the members of your organization and their user IDs, and `GET /v1/user/me` to verify which user the current request acts as.\n\n## Rate Limits\n\n- **100 requests per minute** per account. Short bursts above this are tolerated.\n- **100,000 requests per day** per account.\n- Limits are shared by all API keys and AI app (MCP) connections of the same user, including calls made on behalf of organization members with `x-impersonate-user-id`.\n- Requests over a limit return `429 Too Many Requests` with a `Retry-After` header (in seconds). Wait that long before retrying.\n- Some endpoints have their own lower limit, stated in their description.\n\n## Base URL\n- **Production**: `https://ext.gojiberry.ai`\n\n## Endpoints\n\n### Contacts\n- `GET /v1/contact` - Get all contacts with filtering and pagination\n- `GET /v1/contact/{id}` - Get a specific contact\n- `GET /v1/contact/health` - Health check endpoint\n\n## Example Usage\n\n```bash\n# Get all contacts\ncurl -H \"Authorization: Bearer YOUR_API_KEY\" \\\n     https://ext.gojiberry.ai/v1/contact\n\n# Get contacts with filtering\ncurl -H \"Authorization: Bearer YOUR_API_KEY\" \\\n     \"https://ext.gojiberry.ai/v1/contact?search=john&agent=1&dateFrom=2024-01-01\"\n\n# Get a specific contact\ncurl -H \"Authorization: Bearer YOUR_API_KEY\" \\\n     https://ext.gojiberry.ai/v1/contact/123\n```\n\n## Webhooks\n\nGojiberry allows you to receive real-time notifications when new contacts are created or updated by configuring a webhook URL.\n\n### How to Configure Webhooks\n\n1. **Log in to your Gojiberry AI account** at [https://app.gojiberry.ai](https://app.gojiberry.ai)\n2. **Navigate to the Integrations page** at [https://app.gojiberry.ai/integrations](https://app.gojiberry.ai/integrations)\n3. **Add a Webhook integration** by clicking the Webhook option\n4. **Enter your webhook URL** where you want to receive notifications\n5. **Save the configuration**\n\nOnce configured, Gojiberry will send POST requests to your webhook URL whenever:\n- A new contact is created\n- A contact is updated\n- Other relevant events occur in your account\n\nThe webhook payload will include the full contact data in JSON format. Each webhook request includes a custom header `x-gojiberry-user-id` containing your user ID for verification purposes.\n\n### Verifying Webhook Signatures (optional)\n\nYou can optionally configure a signing secret on your Webhook integration. When a secret is set, every webhook request also includes:\n\n- `x-gojiberry-timestamp`: the Unix timestamp (in seconds) at which the request was sent\n- `x-gojiberry-signature`: `sha256=` followed by the hex-encoded HMAC-SHA256 of `{timestamp}.{rawBody}` computed with your signing secret\n\nTo verify a request:\n\n1. Read the raw request body as a string (do not re-serialize parsed JSON).\n2. Concatenate the value of `x-gojiberry-timestamp`, a `.` character, and the raw body.\n3. Compute the HMAC-SHA256 of that string using your signing secret, hex-encoded, and prefix it with `sha256=`.\n4. Compare it to `x-gojiberry-signature` using a constant-time comparison.\n5. Reject requests whose timestamp is too old (we recommend a 5 minute tolerance) to prevent replay attacks.\n\nExample in Node.js:\n\n```js\nconst crypto = require('crypto');\n\nfunction verifyGojiberrySignature(rawBody, headers, secret) {\n  const timestamp = headers['x-gojiberry-timestamp'];\n  const signature = headers['x-gojiberry-signature'];\n  if (!timestamp || !signature) return false;\n  if (Math.abs(Date.now() / 1000 - Number(timestamp)) > 300) return false;\n  const expected = 'sha256=' + crypto.createHmac('sha256', secret).update(timestamp + '.' + rawBody).digest('hex');\n  return expected.length === signature.length && crypto.timingSafeEqual(Buffer.from(expected), Buffer.from(signature));\n}\n```\n\nIf no signing secret is configured, these headers are not sent.\n\n## Support\n\nFor API support, please contact us at [hello@gojiberry.ai](mailto:hello@gojiberry.ai)\n      ",
+    "description": "\n# Gojiberry AI External API\n\nThis API allows you to programmatically access your Gojiberry AI data and integrate it with your applications.\n\n## How it works\n\nGojiberry runs your outreach as a pipeline of three building blocks:\n\n1. **Source agent — the lead finder.** A source agent continuously sources leads matching your targeting criteria (job titles, industries, locations, signals, ...) and scores them with AI.\n2. **List — where the leads land.** Every source agent is linked to a list (`listId` is required when creating an agent): the leads it finds are imported as contacts into that list. Lists can also be filled by importing contacts yourself.\n3. **Campaign — the outreach.** A campaign uses one or more lists as its lead source (`listIds` is required when creating a campaign) and runs its steps (LinkedIn invitations, messages, emails, ...) on the contacts of those lists, sending through your LinkedIn and/or email seats. Once activated, the campaign runs the outreach automatically on a daily basis.\n\n**Terminology.** In the Gojiberry platform, an **Agent** is a *campaign agent* — the campaign that performs the outreach. A **source agent** is the lead finder that sources the leads. The two are linked through a **list**: the source agent imports the leads it finds into the list, and the campaign agent reaches out to the contacts of that list.\n\n**Best practice: create a Full Cycle agent.** Always create the three resources in this order — first the list, then the source agent that fills it, then the campaign that reaches out to it. Together, the list + source agent + campaign agent form a **Full Cycle agent**: leads are sourced and outreached automatically, end to end. If you create a source agent without a campaign agent, it shows up as a **legacy agent** in the platform: it only sources leads and does **no outreach**. So it's best practice to always create all three.\n\nA typical setup through the API:\n\n```text\nPOST /v1/list                  # 1. create the list\nPOST /v1/agent                 # 2. create the source agent (lead finder) linked to that list (listId)\nPOST /v1/campaign              # 3. create the campaign agent using that list as lead source (listIds)\nGET  /v1/campaign/{id}/logs    # 4. follow the outreach activity\n```\n\n## Authentication\n\nAll API requests require authentication using a Bearer token. To get your API key:\n\n1. **Log in to your Gojiberry AI account** at [https://app.gojiberry.ai](https://app.gojiberry.ai)\n2. **Navigate to Settings** → **API** section\n3. **Click \"Create API Key\"** to generate a new token\n4. **Copy the API key** when it's displayed (you won't be able to see it again)\n5. **Use the token** in your requests by adding the header: `Authorization: Bearer YOUR_API_KEY`\n\n## Impersonation (organization owners)\n\nIf your API key belongs to the **owner of an organization**, you can perform any API call on behalf of another member of your organization by adding the `x-impersonate-user-id` header with the member's user ID:\n\n```bash\n# Get the contacts of the organization member with user ID 123\ncurl -H \"Authorization: Bearer YOUR_API_KEY\" \\\n     -H \"x-impersonate-user-id: 123\" \\\n     https://ext.gojiberry.ai/v1/contact\n```\n\nWhen impersonating, the request behaves exactly as if it was made by that member: you read and write their data (contacts, campaigns, lists, unibox, etc.).\n\nRules:\n- Your API key must belong to the **organization owner**; other members cannot impersonate.\n- The impersonated user must belong to the **same organization** as the API key user.\n- Requests that don't meet these rules are rejected with a `401 Unauthorized`.\n\nTip: use `GET /v1/organization/members` to list the members of your organization and their user IDs, and `GET /v1/user/me` to verify which user the current request acts as.\n\n## Rate Limits\n\n- **100 requests per minute** per account. Short bursts above this are tolerated.\n- **100,000 requests per day** per account.\n- Limits are shared by all API keys and AI app (MCP) connections of the same user, including calls made on behalf of organization members with `x-impersonate-user-id`.\n- Requests over a limit return `429 Too Many Requests` with a `Retry-After` header (in seconds). Wait that long before retrying.\n- Some endpoints have their own lower limit, stated in their description.\n\n## Base URL\n- **Production**: `https://ext.gojiberry.ai`\n\n## Endpoints\n\n### Contacts\n- `GET /v1/contact` - Get all contacts with filtering and pagination\n- `GET /v1/contact/{id}` - Get a specific contact\n- `GET /v1/contact/health` - Health check endpoint\n\n## Example Usage\n\n```bash\n# Get all contacts\ncurl -H \"Authorization: Bearer YOUR_API_KEY\" \\\n     https://ext.gojiberry.ai/v1/contact\n\n# Get contacts with filtering\ncurl -H \"Authorization: Bearer YOUR_API_KEY\" \\\n     \"https://ext.gojiberry.ai/v1/contact?search=john&agent=1&dateFrom=2024-01-01\"\n\n# Get a specific contact\ncurl -H \"Authorization: Bearer YOUR_API_KEY\" \\\n     https://ext.gojiberry.ai/v1/contact/123\n```\n\n## Webhooks\n\nGojiberry allows you to receive real-time notifications when new contacts are created or updated by configuring a webhook URL.\n\n### How to Configure Webhooks\n\n1. **Log in to your Gojiberry AI account** at [https://app.gojiberry.ai](https://app.gojiberry.ai)\n2. **Navigate to the Integrations page** at [https://app.gojiberry.ai/integrations](https://app.gojiberry.ai/integrations)\n3. **Add a Webhook integration** by clicking the Webhook option\n4. **Enter your webhook URL** where you want to receive notifications\n5. **Save the configuration**\n\nOnce configured, Gojiberry will send POST requests to your webhook URL whenever:\n- A new contact is created\n- A contact is updated\n- Other relevant events occur in your account\n\nThe webhook payload will include the full contact data in JSON format. Each webhook request includes a custom header `x-gojiberry-user-id` containing your user ID for verification purposes.\n\n### Verifying Webhook Signatures (optional)\n\nYou can optionally configure a signing secret on your Webhook integration. When a secret is set, every webhook request also includes:\n\n- `x-gojiberry-timestamp`: the Unix timestamp (in seconds) at which the request was sent\n- `x-gojiberry-signature`: `sha256=` followed by the hex-encoded HMAC-SHA256 of `{timestamp}.{rawBody}` computed with your signing secret\n\nTo verify a request:\n\n1. Read the raw request body as a string (do not re-serialize parsed JSON).\n2. Concatenate the value of `x-gojiberry-timestamp`, a `.` character, and the raw body.\n3. Compute the HMAC-SHA256 of that string using your signing secret, hex-encoded, and prefix it with `sha256=`.\n4. Compare it to `x-gojiberry-signature` using a constant-time comparison.\n5. Reject requests whose timestamp is too old (we recommend a 5 minute tolerance) to prevent replay attacks.\n\nExample in Node.js:\n\n```js\nconst crypto = require('crypto');\n\nfunction verifyGojiberrySignature(rawBody, headers, secret) {\n  const timestamp = headers['x-gojiberry-timestamp'];\n  const signature = headers['x-gojiberry-signature'];\n  if (!timestamp || !signature) return false;\n  if (Math.abs(Date.now() / 1000 - Number(timestamp)) > 300) return false;\n  const expected = 'sha256=' + crypto.createHmac('sha256', secret).update(timestamp + '.' + rawBody).digest('hex');\n  return expected.length === signature.length && crypto.timingSafeEqual(Buffer.from(expected), Buffer.from(signature));\n}\n```\n\nIf no signing secret is configured, these headers are not sent.\n\n## Support\n\nFor API support, please contact us at [hello@gojiberry.ai](mailto:hello@gojiberry.ai)\n      ",
     "version": "1.0",
     "contact": {}
   },
@@ -3466,7 +3607,7 @@
         "scheme": "bearer",
         "bearerFormat": "JWT",
         "type": "http",
-        "description": "API key from Settings \u2192 API. Send it as Authorization: Bearer <key>."
+        "description": "Enter API Key"
       }
     },
     "schemas": {
@@ -3608,7 +3749,7 @@
           },
           "minLeadScore": {
             "type": "number",
-            "description": "Minimum lead score threshold (0.00\u20131.00) required to include a lead",
+            "description": "Minimum lead score threshold (0.00–1.00) required to include a lead",
             "nullable": true,
             "example": 0.75
           },
@@ -4089,7 +4230,7 @@
             "description": "Custom fields imported from CSV, keyed by normalized snake_case name (rendered with the custom_ prefix)"
           },
           "campaignStatus": {
-            "description": "Campaign status information. Useful to know what is the achieved step of the contact in the campaign \u2014 i.e. how far the contact has progressed through the campaign's sequence. The stepNumber matches the campaign's step numbers (the steps defined on the campaign), so a stepNumber of 2 means the contact has reached step 2 of that campaign.",
+            "description": "Campaign status information. Useful to know what is the achieved step of the contact in the campaign — i.e. how far the contact has progressed through the campaign's sequence. The stepNumber matches the campaign's step numbers (the steps defined on the campaign), so a stepNumber of 2 means the contact has reached step 2 of that campaign.",
             "type": "array",
             "items": {
               "type": "string"
@@ -4208,7 +4349,7 @@
           },
           "subject": {
             "type": "string",
-            "description": "Email subject for this campaign step. Only used when the step is an email step. When editing an email step, always resend the subject together with the content \u2014 even if only the content changed \u2014 otherwise the stored subject is erased."
+            "description": "Email subject for this campaign step. Only used when the step is an email step. When editing an email step, always resend the subject together with the content — even if only the content changed — otherwise the stored subject is erased."
           },
           "stepNumber": {
             "type": "number",
@@ -4220,7 +4361,7 @@
           },
           "audioUrl": {
             "type": "string",
-            "description": "Server-managed audio of an AI voice message step, spoken in the account\u2019s cloned voice. Read-only: generated voice messages are kept as stored and any sent value is ignored. Declared so stored messages can be resent as-is."
+            "description": "Server-managed audio of an AI voice message step, spoken in the account’s cloned voice. Read-only: generated voice messages are kept as stored and any sent value is ignored. Declared so stored messages can be resent as-is."
           },
           "aiVoiceId": {
             "type": "number",
@@ -4400,10 +4541,13 @@
           "steps": {
             "type": "array",
             "description": "Campaign steps, executed in order. Valid types: invitation, invitationNote, message, voiceMessage, visitProfile, likePosts, email. Ordering rules: at most one Connection Request step (invitation or invitationNote); an invitation cannot come after a message or voiceMessage step. Common fields: delayAfterLastStep in days (integer >= 1, default 2). stepNumber is assigned automatically from the array order and unknown fields are ignored. message and email steps take a messageMode: 'ai' (content is generated by AI for each contact, the default when no content is provided) or 'same' (the provided content is sent as-is, supports the [FirstName], [LastName], [Company], [JobTitle], [SenderFirstName], [SenderName], [SenderFullName] and [SenderCompany] variables; an empty value removes the tag). In 'same' mode, message is required (max 1900 chars for LinkedIn messages) and email steps also require subject. invitationNote requires note (max 180 chars, 280 with a Sales Navigator seat); voiceMessage requires url to the audio file; likePosts accepts numberOfPosts (1-3, default 1); visitProfile and invitation need no extra fields.",
+            "items": {
+              "type": "object"
+            },
             "example": [
               {
                 "type": "invitationNote",
-                "note": "Hi [FirstName], let\u2019s connect!",
+                "note": "Hi [FirstName], let’s connect!",
                 "delayAfterLastStep": 1
               },
               {
@@ -4417,10 +4561,7 @@
                 "message": "Hi [FirstName], ...",
                 "delayAfterLastStep": 3
               }
-            ],
-            "items": {
-              "type": "object"
-            }
+            ]
           },
           "listIds": {
             "description": "IDs of the lists used as lead source. At least one list is required.",
@@ -4749,7 +4890,7 @@
           },
           "minLeadScore": {
             "type": "number",
-            "description": "Minimum lead score threshold (0\u20131) - Usually 0.6 or 0.8"
+            "description": "Minimum lead score threshold (0–1) - Usually 0.6 or 0.8"
           },
           "maxCreditUsage": {
             "type": "number",
@@ -4793,7 +4934,7 @@
           },
           "agentKeyword": {
             "type": "string",
-            "description": "The specific signal value used in this run \u2014 e.g. the keyword searched, the competitor page URL watched, or the lookalike seed. Lets you see which signal produced which leads.",
+            "description": "The specific signal value used in this run — e.g. the keyword searched, the competitor page URL watched, or the lookalike seed. Lets you see which signal produced which leads.",
             "nullable": true
           },
           "userId": {
@@ -4921,7 +5062,7 @@
           },
           "minLeadScore": {
             "type": "number",
-            "description": "Minimum lead score threshold (0\u20131)"
+            "description": "Minimum lead score threshold (0–1)"
           },
           "scriptInstalled": {
             "type": "boolean",
@@ -4932,155 +5073,6 @@
             "description": "Max number of credits per month"
           }
         }
-      },
-      "LinkedinSeat": {
-        "type": "object",
-        "properties": {}
-      },
-      "Unibox": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "string",
-            "description": "Unique chat identifier (internal chat ID)"
-          },
-          "subject": {
-            "type": "string",
-            "description": "Subject of the chat (sometimes empty)"
-          },
-          "lastMessage": {
-            "type": "string",
-            "description": "Content of the latest message in the chat"
-          },
-          "lastMessageDate": {
-            "format": "date-time",
-            "type": "string",
-            "description": "Date of the latest message in the chat"
-          },
-          "messages": {
-            "description": "List of messages in the chat",
-            "type": "array",
-            "items": {
-              "type": "object"
-            }
-          },
-          "sender": {
-            "type": "object",
-            "description": "Sender attendee information for the chat"
-          },
-          "seen": {
-            "type": "boolean",
-            "description": "Whether the chat has been seen",
-            "default": false
-          },
-          "attendeeId": {
-            "type": "string",
-            "description": "attendee ID of the conversation partner (internal)"
-          },
-          "accountId": {
-            "type": "string",
-            "description": "Linkedin account ID associated with this chat (internal)"
-          },
-          "interested": {
-            "type": "boolean",
-            "description": "Whether the contact is interested (sentiment analysis result)"
-          },
-          "tag": {
-            "type": "string",
-            "description": "Sentiment / category tag for the chat"
-          },
-          "contactId": {
-            "type": "number",
-            "description": "Linked Gojiberry contact ID, if matched"
-          },
-          "contact": {
-            "description": "Associated Gojiberry contact",
-            "allOf": [
-              {
-                "$ref": "#/components/schemas/Contact"
-              }
-            ]
-          },
-          "seatId": {
-            "type": "number",
-            "description": "Gojiberry LinkedIn seat ID owning this chat"
-          },
-          "seat": {
-            "description": "Associated LinkedIn seat",
-            "allOf": [
-              {
-                "$ref": "#/components/schemas/LinkedinSeat"
-              }
-            ]
-          },
-          "userId": {
-            "type": "number",
-            "description": "User ID who owns this chat"
-          },
-          "user": {
-            "description": "Associated user account",
-            "allOf": [
-              {
-                "$ref": "#/components/schemas/Account"
-              }
-            ]
-          },
-          "createdAt": {
-            "format": "date-time",
-            "type": "string",
-            "description": "Creation timestamp"
-          },
-          "updatedAt": {
-            "format": "date-time",
-            "type": "string",
-            "description": "Last update timestamp"
-          }
-        },
-        "required": [
-          "id",
-          "seen",
-          "createdAt",
-          "updatedAt"
-        ]
-      },
-      "Unibox2MessageAttachmentDto": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "string",
-            "description": "Attachment id, used by the download endpoint"
-          },
-          "url": {
-            "type": "string",
-            "description": "LinkedIn URL of the attachment"
-          },
-          "type": {
-            "type": "string",
-            "description": "Kind of attachment",
-            "enum": [
-              "img",
-              "video",
-              "audio",
-              "file",
-              "linkedin_post"
-            ]
-          },
-          "name": {
-            "type": "string",
-            "description": "File name"
-          },
-          "size": {
-            "type": "number",
-            "description": "Size in bytes"
-          }
-        },
-        "required": [
-          "id",
-          "url",
-          "type",
-          "name",
-          "size"
-        ]
       },
       "Unibox2Thread": {
         "type": "object",
@@ -5095,9 +5087,9 @@
             "nullable": true
           },
           "lastMessageDate": {
+            "format": "date-time",
             "type": "string",
             "description": "Date of the last message in the thread",
-            "format": "date-time",
             "nullable": true
           },
           "lastMessageFullName": {
@@ -5159,94 +5151,23 @@
             "nullable": true
           },
           "createdAt": {
+            "format": "date-time",
             "type": "string",
-            "description": "When the thread row was created",
-            "format": "date-time"
+            "description": "When the thread row was created"
           },
           "updatedAt": {
+            "format": "date-time",
             "type": "string",
-            "description": "When the thread row was last updated",
-            "format": "date-time"
+            "description": "When the thread row was last updated"
           }
         },
         "required": [
           "id",
           "seen",
+          "attendeeUrn",
           "userId",
           "createdAt",
           "updatedAt"
-        ]
-      },
-      "Unibox2Message": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "number",
-            "description": "Incremental message id"
-          },
-          "threadId": {
-            "type": "number",
-            "description": "Parent thread id"
-          },
-          "userId": {
-            "type": "number",
-            "description": "Owner user id"
-          },
-          "seatId": {
-            "type": "number",
-            "description": "LinkedIn seat id that received/sent the message",
-            "nullable": true
-          },
-          "linkedinMessageBackendUrn": {
-            "type": "string",
-            "description": "LinkedIn's message backend URN (urn:li:messagingMessage:\u2026).",
-            "nullable": true
-          },
-          "senderUrn": {
-            "type": "string",
-            "description": "LinkedIn URN of the sender",
-            "nullable": true
-          },
-          "senderFullName": {
-            "type": "string",
-            "description": "Full name of the sender",
-            "nullable": true
-          },
-          "senderIsSelf": {
-            "type": "boolean",
-            "description": "True when the sender is the seat owner"
-          },
-          "content": {
-            "type": "string",
-            "description": "Message content",
-            "nullable": true
-          },
-          "attachments": {
-            "description": "Attachments attached to the message",
-            "nullable": true,
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/Unibox2MessageAttachmentDto"
-            }
-          },
-          "deliveredAt": {
-            "type": "string",
-            "description": "Timestamp LinkedIn assigned when the message was delivered.",
-            "format": "date-time",
-            "nullable": true
-          },
-          "createdAt": {
-            "type": "string",
-            "description": "Timestamp the row was persisted in Gojiberry",
-            "format": "date-time"
-          }
-        },
-        "required": [
-          "id",
-          "threadId",
-          "userId",
-          "senderIsSelf",
-          "createdAt"
         ]
       },
       "Unibox2ThreadsPageDto": {
@@ -5282,6 +5203,118 @@
           "page",
           "limit",
           "totalPages"
+        ]
+      },
+      "Unibox2MessageAttachmentDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Attachment id, used by the download endpoint"
+          },
+          "url": {
+            "type": "string",
+            "description": "LinkedIn URL of the attachment"
+          },
+          "type": {
+            "type": "string",
+            "description": "Kind of attachment",
+            "enum": [
+              "img",
+              "video",
+              "audio",
+              "file",
+              "linkedin_post"
+            ]
+          },
+          "name": {
+            "type": "string",
+            "description": "File name"
+          },
+          "size": {
+            "type": "number",
+            "description": "Size in bytes"
+          }
+        },
+        "required": [
+          "id",
+          "url",
+          "type",
+          "name",
+          "size"
+        ]
+      },
+      "Unibox2Message": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "number",
+            "description": "Incremental message id"
+          },
+          "threadId": {
+            "type": "number",
+            "description": "Parent thread id"
+          },
+          "userId": {
+            "type": "number",
+            "description": "Owner user id"
+          },
+          "seatId": {
+            "type": "number",
+            "description": "LinkedIn seat id that received/sent the message",
+            "nullable": true
+          },
+          "linkedinMessageBackendUrn": {
+            "type": "string",
+            "description": "LinkedIn's message backend URN (urn:li:messagingMessage:…). Used with user/thread scoping as the dedup key when the same message arrives via both the realtime SSE stream and the getThread backfill.",
+            "nullable": true
+          },
+          "senderUrn": {
+            "type": "string",
+            "description": "LinkedIn URN of the sender",
+            "nullable": true
+          },
+          "senderFullName": {
+            "type": "string",
+            "description": "Full name of the sender",
+            "nullable": true
+          },
+          "senderIsSelf": {
+            "type": "boolean",
+            "description": "True when the sender is the seat owner"
+          },
+          "content": {
+            "type": "string",
+            "description": "Message content",
+            "nullable": true
+          },
+          "attachments": {
+            "description": "Attachments attached to the message",
+            "nullable": true,
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Unibox2MessageAttachmentDto"
+            }
+          },
+          "deliveredAt": {
+            "format": "date-time",
+            "type": "string",
+            "description": "Timestamp LinkedIn assigned when the message was delivered (voyager `deliveredAt`). Distinct from `createdAt`, which is when the row landed in Gojiberry — for backfilled history those can differ by years.",
+            "nullable": true
+          },
+          "createdAt": {
+            "format": "date-time",
+            "type": "string",
+            "description": "Timestamp the row was persisted in Gojiberry"
+          }
+        },
+        "required": [
+          "id",
+          "threadId",
+          "userId",
+          "senderUrn",
+          "senderIsSelf",
+          "createdAt"
         ]
       },
       "Unibox2MessagesPageDto": {
@@ -5328,7 +5361,8 @@
           },
           "mimeType": {
             "type": "string",
-            "description": "MIME type of the attachment"
+            "description": "MIME type of the attachment",
+            "example": "image/jpeg"
           }
         },
         "required": [
