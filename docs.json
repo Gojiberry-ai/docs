@@ -64,6 +64,8 @@
               "api-reference/campaigns/update-a-campaign",
               "api-reference/campaigns/delete-a-campaign",
               "api-reference/campaigns/logs",
+              "api-reference/campaigns/queue",
+              "api-reference/campaigns/email-queue",
               "api-reference/campaigns/status"
             ]
           },
