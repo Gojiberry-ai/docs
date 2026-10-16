@@ -32,8 +32,7 @@
             "group": "Status",
             "pages": [
               "api-reference/status/hello",
-              "api-reference/status/health",
-              "api-reference/status/get"
+              "api-reference/status/health"
             ]
           },
           {
