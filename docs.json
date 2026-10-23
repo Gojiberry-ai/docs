@@ -123,6 +123,13 @@
               "api-reference/unibox/send-message",
               "api-reference/unibox/download-attachment"
             ]
+          },
+          {
+            "group": "Excluded Contacts",
+            "pages": [
+              "api-reference/excluded-contacts/get-all-excluded-contacts-with-pagination-and-search",
+              "api-reference/excluded-contacts/delete-an-excluded-contact"
+            ]
           }
         ]
       },

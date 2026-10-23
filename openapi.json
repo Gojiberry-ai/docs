@@ -404,7 +404,7 @@
         ]
       },
       "delete": {
-        "description": "Permanently deletes the contact. When a contact is deleted, its profileUrl (along with its LinkedIn member ID and email, when known) is stored in your excluded contacts, so the Lead sources agents will not import it again. Creating the same contact again through POST /v1/contact is also refused (CONTACT_ALREADY_EXCLUDED).",
+        "description": "Permanently deletes the contact. When a contact is deleted, its profileUrl (along with its LinkedIn member ID and email, when known) is stored in your excluded contacts, so the Lead sources agents will not import it again. Creating the same contact again through POST /v1/contact is also refused (CONTACT_ALREADY_EXCLUDED). To allow it to be imported again, find its exclusion with GET /v1/excluded-contact and remove it with DELETE /v1/excluded-contact/{id}.",
         "operationId": "ContactExternalController_delete",
         "parameters": [
           {
@@ -1297,6 +1297,9 @@
           },
           "404": {
             "description": "Campaign or list not found"
+          },
+          "409": {
+            "description": "The campaign steps were changed by another save while this update was applied: fetch the campaign and retry"
           }
         },
         "security": [
@@ -3439,7 +3442,7 @@
     },
     "/v1/email-seat": {
       "get": {
-        "description": "Retrieve the email seats (connected Gmail / Outlook mailboxes) of the authenticated user. The seat IDs can be used in the emailSeatIds field when creating a campaign with POST /v1/campaign. When impersonating with the x-impersonate-user-id header, the email seats of the impersonated user are returned.",
+        "description": "Retrieve the email seats (connected Gmail / Outlook / IMAP-SMTP mailboxes) of the authenticated user. The seat IDs can be used in the emailSeatIds field when creating a campaign with POST /v1/campaign. When impersonating with the x-impersonate-user-id header, the email seats of the impersonated user are returned.",
         "operationId": "EmailSeatExternalController_getEmailSeats",
         "parameters": [
           {
@@ -3489,9 +3492,10 @@
                         "type": "string",
                         "enum": [
                           "google",
-                          "outlook"
+                          "outlook",
+                          "imap"
                         ],
-                        "description": "Email provider of the mailbox"
+                        "description": "Email provider of the mailbox (imap: connected with IMAP/SMTP credentials)"
                       },
                       "purchased": {
                         "type": "boolean",
@@ -3584,6 +3588,175 @@
         "summary": "Get all email seats",
         "tags": [
           "Email Seat"
+        ]
+      }
+    },
+    "/v1/excluded-contact": {
+      "get": {
+        "description": "Excluded contacts are people your agents must never import again. A contact is excluded when it is deleted (from the platform or with DELETE /v1/contact/{id}): its LinkedIn profile URL, LinkedIn member ID and email, when known, are kept in your excluded contacts. The Lead sources agents skip any lead matching one of them, and POST /v1/contact refuses to create it again (CONTACT_ALREADY_EXCLUDED). Use this route to find the exclusion of a person, then DELETE /v1/excluded-contact/{id} to allow it to be imported again. Results are sorted from the most recent exclusion to the oldest. When both identifier and profileId are provided, an exclusion must match both.",
+        "operationId": "ExcludedContactExternalController_findMany",
+        "parameters": [
+          {
+            "name": "x-impersonate-user-id",
+            "in": "header",
+            "description": "ID of an organization member to act on behalf of. The API key user must be the owner of the organization and the target user must belong to the same organization.",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "page",
+            "required": false,
+            "in": "query",
+            "description": "Page number (starts from 1)",
+            "schema": {
+              "type": "number"
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "description": "Number of excluded contacts per page (default: 20, maximum: 100)",
+            "schema": {
+              "type": "number"
+            }
+          },
+          {
+            "name": "identifier",
+            "required": false,
+            "in": "query",
+            "description": "LinkedIn public identifier of the person (eg. johndoe), or their full LinkedIn profile URL (eg. https://www.linkedin.com/in/johndoe). Matches exclusions with this LinkedIn profile URL.",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "profileId",
+            "required": false,
+            "in": "query",
+            "description": "LinkedIn profile ID of the person (eg. ACoAABcwGZ0BPKyEbC2o13Qq7MhrAaD). Matches exclusions with the LinkedIn member ID behind this profile ID.",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "List of excluded contacts with pagination information",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "excludedContacts": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "number",
+                            "description": "Excluded contact ID (usable with DELETE /v1/excluded-contact/{id})"
+                          },
+                          "profileUrl": {
+                            "type": "string",
+                            "nullable": true,
+                            "description": "LinkedIn profile URL of the excluded person"
+                          },
+                          "linkedinMemberId": {
+                            "type": "number",
+                            "nullable": true,
+                            "description": "Stable numeric LinkedIn member ID of the excluded person"
+                          },
+                          "email": {
+                            "type": "string",
+                            "nullable": true,
+                            "description": "Email address of the excluded person"
+                          },
+                          "createdAt": {
+                            "type": "string",
+                            "format": "date-time",
+                            "description": "Date at which the person was excluded"
+                          }
+                        }
+                      }
+                    },
+                    "total": {
+                      "type": "number",
+                      "description": "Total number of excluded contacts matching the search"
+                    },
+                    "page": {
+                      "type": "number",
+                      "description": "Current page number"
+                    },
+                    "limit": {
+                      "type": "number",
+                      "description": "Number of excluded contacts per page"
+                    },
+                    "totalPages": {
+                      "type": "number",
+                      "description": "Total number of pages"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "profileId is not a valid LinkedIn profile ID"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Get all excluded contacts with pagination and search",
+        "tags": [
+          "Excluded Contacts"
+        ]
+      }
+    },
+    "/v1/excluded-contact/{id}": {
+      "delete": {
+        "description": "Removes the exclusion, so the person can be imported again: the Lead sources agents may find and import them again, and POST /v1/contact accepts them. Deleting an exclusion does not restore the contact that was deleted, nor its history.",
+        "operationId": "ExcludedContactExternalController_delete",
+        "parameters": [
+          {
+            "name": "x-impersonate-user-id",
+            "in": "header",
+            "description": "ID of an organization member to act on behalf of. The API key user must be the owner of the organization and the target user must belong to the same organization.",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Excluded contact successfully deleted"
+          },
+          "404": {
+            "description": "Excluded contact not found"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Delete an excluded contact",
+        "tags": [
+          "Excluded Contacts"
         ]
       }
     }
