@@ -68,15 +68,16 @@ Each tool maps to an [API reference](/api-reference/webhooks) endpoint. The assi
 
 | Area | Tools |
 | --- | --- |
-| Contacts | `list_contacts`, `get_contact`, `create_contact`, `update_contact`, `reject_contact`, `unreject_contact`, `enrich_contact_email`, `enrich_contact_phone`, `get_intent_type_counts` |
+| Contacts | `list_contacts`, `get_contact`, `create_contact`, `update_contact`, `delete_contact`, `reject_contact`, `unreject_contact`, `add_contact_signal`, `enrich_contact_email`, `enrich_contact_phone`, `get_intent_type_counts` |
+| Excluded contacts | `list_excluded_contacts`, `delete_excluded_contact` |
 | Lists | `list_lists`, `get_list`, `create_list`, `add_contacts_to_list`, `remove_contacts_from_list` |
-| Source agents | `list_agents`, `get_agent`, `create_agent`, `update_agent`, `get_agent_logs` |
-| Campaigns | `list_campaigns`, `get_campaign`, `create_campaign`, `update_campaign`, `activate_campaign`, `pause_campaign`, `get_campaign_logs`, `list_email_seats` |
-| Directory | `get_directory_industries`, `search_leads`, `reveal_leads`, `search_companies`, `reveal_companies` |
-| LinkedIn inbox | `list_unibox_threads`, `get_unibox_thread_messages`, `send_unibox_message` |
-| Organization | `get_organization`, `list_organization_members`, `impersonate_user` |
+| Source agents | `list_sources`, `get_agent`, `create_source`, `update_source`, `delete_source`, `get_agent_logs` |
+| Campaigns | `list_campaigns`, `get_campaign`, `create_campaign`, `update_campaign`, `activate_campaign`, `pause_campaign`, `delete_campaign`, `get_campaign_logs`, `get_campaign_queue`, `get_campaign_email_queue`, `list_email_seats` |
+| Directory | `get_directory_industries`, `get_directory_locations`, `search_leads`, `reveal_leads`, `search_companies`, `reveal_companies` |
+| LinkedIn inbox | `list_unibox_threads`, `get_unibox_thread_messages`, `get_unibox_for_contact`, `download_unibox_attachment`, `send_unibox_message` |
+| Organization | `get_organization`, `list_organization_members`, `get_current_user`, `get_user_permissions`, `impersonate_user` |
 
-Tools that change data are flagged as such, so assistants that support it ask you before running them. `send_unibox_message` sends a real LinkedIn message and cannot be undone.
+Tools that change data are flagged as such, so assistants that support it ask you before running them. `send_unibox_message` sends a real LinkedIn message and cannot be undone. `delete_contact`, `delete_campaign` and `delete_source` are permanent; to stop outreach or sourcing for a while, ask the assistant to pause the campaign or the source instead.
 
 ## Credits
 
