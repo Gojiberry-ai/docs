@@ -303,7 +303,7 @@
             "name": "review",
             "required": false,
             "in": "query",
-            "description": "Filter contacts by lead review state. Review only applies to manual campaigns (isManual=true): their new leads wait in a review queue and are not contacted until a user accepts them. to_review: leads waiting for a decision (in a list, not accepted, not rejected); use it to find the leads a user still needs to review. approved: leads accepted for the campaign (readyForCampaign=true and not rejected). rejected: leads rejected by a user (rejectedAt set), whatever their readyForCampaign value. Accept a to_review lead with PATCH /v1/contact/{id} and readyForCampaign set to true; reject it with POST /v1/contact/{id}/reject. A rejected lead cannot be accepted directly: call POST /v1/contact/{id}/unreject first, which puts it back in to_review. On automatic campaigns (isManual=false), the agent accepts leads itself when it needs them, so to_review there only lists leads it has not picked up yet, not leads waiting for a user. Combine with listId to restrict the results to one campaign list. Omit to return contacts in every review state.",
+            "description": "Filter contacts by lead review state. Review only applies to manual campaigns (isManual=true): their new leads wait in a review queue and are not contacted until a user accepts them. to_review: leads waiting for a decision (in a list, not accepted, not rejected); use it to find the leads a user still needs to review. approved: leads accepted for the campaign (readyForCampaign=true and not rejected). rejected: leads rejected by a user (rejectedAt set), whatever their readyForCampaign value. Approve a lead with POST /v1/contact/{id}/approve (this also clears a rejection); reject it with POST /v1/contact/{id}/reject. On automatic campaigns (isManual=false), the agent accepts leads itself when it needs them, so to_review there only lists leads it has not picked up yet, not leads waiting for a user. Combine with listId to restrict the results to one campaign list. Omit to return contacts in every review state.",
             "schema": {
               "enum": [
                 "to_review",
@@ -925,9 +925,58 @@
         ]
       }
     },
+    "/v1/contact/{id}/approve": {
+      "post": {
+        "description": "Accepts the lead for its campaign, like Approve in the app: readyForCampaign is set to true and it leaves the review queue (review=to_review on GET /v1/contact). Use it on review-mode campaigns (isManual=true), where leads are not contacted until approved; the campaign picks the lead up at its next launch. Approving a rejected lead also clears its rejection (rejectedAt, rejectedByUserId and the reason), so no unreject call is needed first. When the lead belongs to a review-mode campaign and a connected CRM integration is set to send every lead, the lead is also queued for sync to that CRM, unless it was already synced there. The sync runs in the background: the response does not wait for it, and a failure to queue it does not fail the approval. Approving an already-approved lead keeps it approved. To take an approved lead out of the campaign, reject it with POST /v1/contact/{id}/reject.",
+        "operationId": "ContactExternalController_approve",
+        "parameters": [
+          {
+            "name": "x-impersonate-user-id",
+            "in": "header",
+            "description": "ID of an organization member to act on behalf of. The API key user must be the owner of the organization and the target user must belong to the same organization.",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The approved contact, with readyForCampaign true and the rejection fields cleared",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Contact"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Contact not found"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Approve a lead",
+        "tags": [
+          "Contacts"
+        ]
+      }
+    },
     "/v1/contact/{id}/reject": {
       "post": {
-        "description": "Marks the contact as rejected: it disappears from the review queue, is excluded from campaign scheduling (readyForCampaign is reset to false), and will not be picked up by automatic campaign launches. The rejection records who rejected the lead and when (rejectedAt / rejectedByUserId on the returned contact). Providing a reason is optional but recommended: reasons are stored on the contact and help understand why leads are rejected so targeting can be refined. Calling this route on an already-rejected contact only updates the reason (latest reason wins); the original rejection timestamp and reviewer are kept. A rejection is reversible with POST /v1/contact/{id}/unreject.",
+        "description": "Marks the contact as rejected: it disappears from the review queue, is excluded from campaign scheduling (readyForCampaign is reset to false), and will not be picked up by automatic campaign launches. The rejection records who rejected the lead and when (rejectedAt / rejectedByUserId on the returned contact). Providing a reason is optional but recommended: reasons are stored on the contact and help understand why leads are rejected so targeting can be refined. Calling this route on an already-rejected contact only updates the reason (latest reason wins); the original rejection timestamp and reviewer are kept. A rejection is reversible with POST /v1/contact/{id}/unreject (back to the review queue) or POST /v1/contact/{id}/approve (straight to approved).",
         "operationId": "ContactExternalController_reject",
         "parameters": [
           {
@@ -1017,7 +1066,7 @@
     },
     "/v1/contact/{id}/unreject": {
       "post": {
-        "description": "Reverses a rejection: clears rejectedAt, rejectedByUserId and the stored reason, putting the contact back in the review queue. This does not approve the lead — readyForCampaign is reset to false, so the contact still needs to be accepted (e.g. by updating it with readyForCampaign set to true) before it is picked up by a campaign. Note that because readyForCampaign is always reset, calling this route on an approved contact moves it back to the review queue.",
+        "description": "Reverses a rejection: clears rejectedAt, rejectedByUserId and the stored reason, putting the contact back in the review queue. This does not approve the lead — readyForCampaign is reset to false, so the contact still needs to be approved with POST /v1/contact/{id}/approve before it is picked up by a campaign. To approve a rejected lead, call approve directly: it also clears the rejection. Note that because readyForCampaign is always reset, calling this route on an approved contact moves it back to the review queue.",
         "operationId": "ContactExternalController_unreject",
         "parameters": [
           {
@@ -4690,7 +4739,7 @@
           },
           "readyForCampaign": {
             "type": "boolean",
-            "description": "Mainly used for review mode campaigns: setting this to true accepts the lead for the scheduled queue, so it is picked up at the next campaign launch without manual review. Also set by the AI agent when a contact should be scheduled."
+            "description": "Mainly used for review mode campaigns: setting this to true accepts the lead for the scheduled queue, so it is picked up at the next campaign launch without manual review. Also set by the AI agent when a contact should be scheduled. To approve a lead, prefer POST /v1/contact/{id}/approve: unlike this field, it also clears a rejection (a rejected lead stays rejected when only this field is set) and, for a lead of a review-mode campaign, queues it for sync to a connected CRM integration set to send every lead."
           },
           "state": {
             "type": "string",
@@ -4855,7 +4904,7 @@
           },
           "isManual": {
             "type": "boolean",
-            "description": "Review mode. true: every new lead waits in a review queue and is not contacted until a user accepts it. false: the campaign picks up new leads and contacts them without review. To list the leads waiting for review, take the campaign lists (GET /v1/list, lists whose campaignId is this campaign) and call GET /v1/contact?listId={listId}&review=to_review for each. Accept a lead with PATCH /v1/contact/{id} and readyForCampaign set to true; reject it with POST /v1/contact/{id}/reject. Switching to false lets the campaign pick up the leads still waiting for review, without review; rejected leads stay out. Switching to true sends the leads the campaign has not picked up yet to the review queue; leads already accepted keep going.",
+            "description": "Review mode. true: every new lead waits in a review queue and is not contacted until a user accepts it. false: the campaign picks up new leads and contacts them without review. To list the leads waiting for review, take the campaign lists (GET /v1/list, lists whose campaignId is this campaign) and call GET /v1/contact?listId={listId}&review=to_review for each. Approve a lead with POST /v1/contact/{id}/approve; reject it with POST /v1/contact/{id}/reject. Switching to false lets the campaign pick up the leads still waiting for review, without review; rejected leads stay out. Switching to true sends the leads the campaign has not picked up yet to the review queue; leads already accepted keep going.",
             "example": true
           },
           "steps": {

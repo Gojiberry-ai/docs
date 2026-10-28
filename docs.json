@@ -52,7 +52,8 @@
               "api-reference/contacts/enrich-phone-async",
               "api-reference/contacts/reject-a-lead",
               "api-reference/contacts/unreject-a-lead",
-              "api-reference/contacts/add-a-signal"
+              "api-reference/contacts/add-a-signal",
+              "api-reference/contacts/approve-a-lead"
             ]
           },
           {
