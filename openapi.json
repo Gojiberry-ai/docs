@@ -31,6 +31,7 @@
     },
     "/v1/contact": {
       "post": {
+        "description": "A contact whose email or phone belongs to a deletion request filed through California's Delete Request and Opt-out Platform (DROP, under the CCPA and the California Delete Act) is not created: the response is { success: false, messageCode: \"CONTACT_DELETION_REQUESTED\", message }.",
         "operationId": "ContactExternalController_create",
         "parameters": [
           {
@@ -297,6 +298,37 @@
             "schema": {
               "type": "number"
             }
+          },
+          {
+            "name": "review",
+            "required": false,
+            "in": "query",
+            "description": "Filter contacts by lead review state. Review only applies to manual campaigns (isManual=true): their new leads wait in a review queue and are not contacted until a user accepts them. to_review: leads waiting for a decision (in a list, not accepted, not rejected); use it to find the leads a user still needs to review. approved: leads accepted for the campaign (readyForCampaign=true and not rejected). rejected: leads rejected by a user (rejectedAt set), whatever their readyForCampaign value. Accept a to_review lead with PATCH /v1/contact/{id} and readyForCampaign set to true; reject it with POST /v1/contact/{id}/reject. A rejected lead cannot be accepted directly: call POST /v1/contact/{id}/unreject first, which puts it back in to_review. On automatic campaigns (isManual=false), the agent accepts leads itself when it needs them, so to_review there only lists leads it has not picked up yet, not leads waiting for a user. Combine with listId to restrict the results to one campaign list. Omit to return contacts in every review state.",
+            "schema": {
+              "enum": [
+                "to_review",
+                "approved",
+                "rejected"
+              ],
+              "type": "string"
+            }
+          },
+          {
+            "name": "state",
+            "required": false,
+            "in": "query",
+            "description": "Filter contacts by campaign outreach state. Contacts with no state are waiting for or going through their campaign (or are in no campaign); omit this parameter to include them. answered: the contact replied (LinkedIn or email); the campaign stops contacting them. Use it to find replies to follow up on. finished: the contact went through every step of the campaign. paused: outreach stopped because a LinkedIn step could not be done, e.g. a message was due but the contact is not a 1st-degree connection or has blocked the sender, or the campaign lost its LinkedIn sender. excluded: the contact was taken out of outreach, e.g. its LinkedIn profile could not be found, it has no LinkedIn profile and no email step is left, or a CRM exclusion rule matched it. answered, finished, paused and excluded contacts are no longer contacted by the campaign. 1stnetwork: the contact is already a 1st-degree LinkedIn connection of the sender, so no invitation is sent; the campaign goes on with its next steps unless it is set to exclude 1st-degree connections. onhold: sending is blocked because a message template uses custom fields the contact has no value for; it resumes on its own once those values are filled. Combine with listId to restrict the results to one campaign list.",
+            "schema": {
+              "enum": [
+                "answered",
+                "finished",
+                "paused",
+                "excluded",
+                "1stnetwork",
+                "onhold"
+              ],
+              "type": "string"
+            }
           }
         ],
         "responses": {
@@ -404,7 +436,7 @@
         ]
       },
       "delete": {
-        "description": "Permanently deletes the contact. When a contact is deleted, its profileUrl (along with its LinkedIn member ID and email, when known) is stored in your excluded contacts, so the Lead sources agents will not import it again. Creating the same contact again through POST /v1/contact is also refused (CONTACT_ALREADY_EXCLUDED). To allow it to be imported again, find its exclusion with GET /v1/excluded-contact and remove it with DELETE /v1/excluded-contact/{id}.",
+        "description": "Permanently deletes the contact. When a contact is deleted, its profileUrl (along with its LinkedIn member ID and email, when known) is stored in your excluded contacts, so the Lead sources agents will not import it again. Creating the same contact again through POST /v1/contact is also refused (CONTACT_ALREADY_EXCLUDED). To allow it to be imported again, find its exclusions with GET /v1/excluded-contact and remove each of them with DELETE /v1/excluded-contact/{id}.",
         "operationId": "ContactExternalController_delete",
         "parameters": [
           {
@@ -1250,7 +1282,7 @@
         ]
       },
       "patch": {
-        "description": "Update campaign name, associated list IDs, and existing step messages or same/AI mode. **Steps must keep the same length and type order; only the message content and mode can be edited in the steps.**",
+        "description": "Update campaign name, review mode (`isManual`), associated list IDs, and existing step messages or same/AI mode. **Steps must keep the same length and type order; only the message content and mode can be edited in the steps.** With `isManual` set to true, new leads wait for a user to accept them before any outreach: list them with `GET /v1/contact?listId={listId}&review=to_review`.",
         "operationId": "CampaignExternalController_update",
         "parameters": [
           {
@@ -3593,7 +3625,7 @@
     },
     "/v1/excluded-contact": {
       "get": {
-        "description": "Excluded contacts are people your agents must never import again. A contact is excluded when it is deleted (from the platform or with DELETE /v1/contact/{id}): its LinkedIn profile URL, LinkedIn member ID and email, when known, are kept in your excluded contacts. The Lead sources agents skip any lead matching one of them, and POST /v1/contact refuses to create it again (CONTACT_ALREADY_EXCLUDED). Use this route to find the exclusion of a person, then DELETE /v1/excluded-contact/{id} to allow it to be imported again. Results are sorted from the most recent exclusion to the oldest. When both identifier and profileId are provided, an exclusion must match both.",
+        "description": "Excluded contacts are people your agents must never import again. A contact is excluded when it is deleted (from the platform or with DELETE /v1/contact/{id}): its LinkedIn profile URL, LinkedIn member ID and email, when known, are kept in your excluded contacts. The Lead sources agents skip any lead matching one of them, and POST /v1/contact refuses to create it again (CONTACT_ALREADY_EXCLUDED). Use this route to find the exclusions of a person, then DELETE /v1/excluded-contact/{id} each of them to allow the person to be imported again. A person can be covered by several exclusions (for example one holding their profile URL and another their email), and stays blocked while any of them remains: pass every identifier you know (identifier, profileId, email) to find them all. When several filters are provided, an exclusion matching any of them is returned. Results are sorted from the most recent exclusion to the oldest.",
         "operationId": "ExcludedContactExternalController_findMany",
         "parameters": [
           {
@@ -3636,7 +3668,16 @@
             "name": "profileId",
             "required": false,
             "in": "query",
-            "description": "LinkedIn profile ID of the person (eg. ACoAABcwGZ0BPKyEbC2o13Qq7MhrAaD). Matches exclusions with the LinkedIn member ID behind this profile ID.",
+            "description": "LinkedIn profile ID of the person (eg. ACoAABcwGZ0BPKyEbC2o13Qq7MhrAaD), or a profile URN containing it. Matches exclusions with the LinkedIn member ID behind this profile ID.",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "email",
+            "required": false,
+            "in": "query",
+            "description": "Email address of the person. Matches exclusions with exactly this email.",
             "schema": {
               "type": "string"
             }
@@ -4006,7 +4047,7 @@
           },
           "isManual": {
             "type": "boolean",
-            "description": "Whether the campaign is manual",
+            "description": "Review mode. true: new leads wait in a review queue and are not contacted until a user accepts them; list them with GET /v1/contact?listId={listId}&review=to_review. false: the campaign picks up new leads and contacts them without review.",
             "default": false
           },
           "skipInvitationAfterDays": {
@@ -4366,6 +4407,12 @@
             "description": "Free-text reason when Other was submitted with text",
             "nullable": true
           },
+          "legalDeletionRequestedAt": {
+            "format": "date-time",
+            "type": "string",
+            "description": "When we matched a deletion request this person filed through California's Delete Request and Opt-out Platform (DROP). The contact was then anonymized: name, job title, email, phone and LinkedIn profile removed, and taken out of campaigns and lists.",
+            "nullable": true
+          },
           "deepResearchStartedAt": {
             "format": "date-time",
             "type": "string",
@@ -4454,7 +4501,7 @@
           },
           "readyForCampaign": {
             "type": "boolean",
-            "description": "Ready for campaign flag",
+            "description": "Whether the contact can be enrolled in the campaign. On a manual campaign (isManual=true), false with no rejectedAt means the contact is in review: the user must review and accept it before the agent adds it. A contact with rejectedAt set is rejected whatever this flag says. On an automatic campaign (isManual=false), the agent sets it to true itself when the contact is needed.",
             "default": false
           },
           "hasStartedCampaign": {
@@ -4464,12 +4511,14 @@
           },
           "state": {
             "type": "string",
-            "description": "Contact state",
+            "description": "Campaign outreach state; null while the contact is waiting for or going through its campaign. See the state filter of GET /v1/contact for what each value means.",
+            "nullable": true,
             "enum": [
               "finished",
               "paused",
               "1stnetwork",
               "excluded",
+              "answered",
               "onhold"
             ]
           },
@@ -4633,6 +4682,11 @@
               "unknown",
               "out-of-scope"
             ]
+          },
+          "user_note": {
+            "type": "string",
+            "description": "Internal note about the contact, shown as Internal Notes on the contact in the app and never sent to the contact. The value REPLACES the stored note: to add to it, read the contact first and send the existing note followed by the new text. Send an empty string or null to clear it. Not to be confused with the note field, which holds context from the lead source and cannot be edited after creation.",
+            "nullable": true
           },
           "readyForCampaign": {
             "type": "boolean",
@@ -4798,6 +4852,11 @@
             "items": {
               "type": "string"
             }
+          },
+          "isManual": {
+            "type": "boolean",
+            "description": "Review mode. true: every new lead waits in a review queue and is not contacted until a user accepts it. false: the campaign picks up new leads and contacts them without review. To list the leads waiting for review, take the campaign lists (GET /v1/list, lists whose campaignId is this campaign) and call GET /v1/contact?listId={listId}&review=to_review for each. Accept a lead with PATCH /v1/contact/{id} and readyForCampaign set to true; reject it with POST /v1/contact/{id}/reject. Switching to false lets the campaign pick up the leads still waiting for review, without review; rejected leads stay out. Switching to true sends the leads the campaign has not picked up yet to the review queue; leads already accepted keep going.",
+            "example": true
           },
           "steps": {
             "type": "array",
