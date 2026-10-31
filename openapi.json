@@ -3498,7 +3498,8 @@
                       "organization.invitations.revoke",
                       "organization.billing.manage",
                       "organization.team_analytics.view",
-                      "organization.competitor_filtering.manage"
+                      "organization.competitor_filtering.manage",
+                      "organization.integrations.manage"
                     ]
                   },
                   "example": [
@@ -3847,6 +3848,770 @@
         "summary": "Delete an excluded contact",
         "tags": [
           "Excluded Contacts"
+        ]
+      }
+    },
+    "/v1/team-activity": {
+      "get": {
+        "description": "Team totals for the whole organization over a date range, owner included: the same figures as the Team activity page of the app. Only organization owners and admins can call it. Figures come from daily snapshots: each UTC day is computed at 04:30 UTC the next day, so today is not included yet.",
+        "operationId": "TeamActivityExternalController_getSummary",
+        "parameters": [
+          {
+            "name": "x-impersonate-user-id",
+            "in": "header",
+            "description": "ID of an organization member to act on behalf of. The API key user must be the owner of the organization and the target user must belong to the same organization. Team activity is only returned when the user the request acts as is an owner or admin.",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "dateFrom",
+            "required": true,
+            "in": "query",
+            "description": "First day of the period, YYYY-MM-DD (UTC)",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "dateTo",
+            "required": true,
+            "in": "query",
+            "description": "Last day of the period, YYYY-MM-DD (UTC), included",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Team activity summary",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "organizationId": {
+                      "type": "number"
+                    },
+                    "dateFrom": {
+                      "type": "string",
+                      "example": "2026-10-01"
+                    },
+                    "dateTo": {
+                      "type": "string",
+                      "example": "2026-10-31"
+                    },
+                    "generatedAt": {
+                      "type": "string",
+                      "format": "date-time",
+                      "nullable": true,
+                      "description": "When the most recent snapshot in the period was computed"
+                    },
+                    "accountsCount": {
+                      "type": "number",
+                      "description": "Number of members counted"
+                    },
+                    "dealSizeSetCount": {
+                      "type": "number",
+                      "description": "Members who set their own average deal size"
+                    },
+                    "summary": {
+                      "type": "object",
+                      "properties": {
+                        "leadsFound": {
+                          "type": "object",
+                          "description": "Leads found by the source agents",
+                          "properties": {
+                            "value": {
+                              "type": "number",
+                              "nullable": true,
+                              "description": "Value over the period. Null when it cannot be computed."
+                            },
+                            "rate": {
+                              "type": "number",
+                              "nullable": true,
+                              "description": "Ratio between 0 and 1 (for example 0.12 = 12%), or null when the metric has no rate."
+                            },
+                            "changePercent": {
+                              "type": "number",
+                              "nullable": true,
+                              "description": "Change in percent against the previous period of the same length. Null when that period has no data."
+                            }
+                          }
+                        },
+                        "linkedinInvitationsSent": {
+                          "type": "object",
+                          "description": "LinkedIn invitations sent",
+                          "properties": {
+                            "value": {
+                              "type": "number",
+                              "nullable": true,
+                              "description": "Value over the period. Null when it cannot be computed."
+                            },
+                            "rate": {
+                              "type": "number",
+                              "nullable": true,
+                              "description": "Ratio between 0 and 1 (for example 0.12 = 12%), or null when the metric has no rate."
+                            },
+                            "changePercent": {
+                              "type": "number",
+                              "nullable": true,
+                              "description": "Change in percent against the previous period of the same length. Null when that period has no data."
+                            }
+                          }
+                        },
+                        "replied": {
+                          "type": "object",
+                          "description": "Distinct leads who replied. Rate: replied ÷ messages sent.",
+                          "properties": {
+                            "value": {
+                              "type": "number",
+                              "nullable": true,
+                              "description": "Value over the period. Null when it cannot be computed."
+                            },
+                            "rate": {
+                              "type": "number",
+                              "nullable": true,
+                              "description": "Ratio between 0 and 1 (for example 0.12 = 12%), or null when the metric has no rate."
+                            },
+                            "changePercent": {
+                              "type": "number",
+                              "nullable": true,
+                              "description": "Change in percent against the previous period of the same length. Null when that period has no data."
+                            }
+                          }
+                        },
+                        "messagesSent": {
+                          "type": "object",
+                          "description": "LinkedIn messages (InMails and voice messages included) and emails sent",
+                          "properties": {
+                            "value": {
+                              "type": "number",
+                              "nullable": true,
+                              "description": "Value over the period. Null when it cannot be computed."
+                            },
+                            "rate": {
+                              "type": "number",
+                              "nullable": true,
+                              "description": "Ratio between 0 and 1 (for example 0.12 = 12%), or null when the metric has no rate."
+                            },
+                            "changePercent": {
+                              "type": "number",
+                              "nullable": true,
+                              "description": "Change in percent against the previous period of the same length. Null when that period has no data."
+                            }
+                          }
+                        },
+                        "replyRate": {
+                          "type": "object",
+                          "description": "Replied ÷ messages sent",
+                          "properties": {
+                            "value": {
+                              "type": "number",
+                              "nullable": true,
+                              "description": "Value over the period. Null when it cannot be computed."
+                            },
+                            "rate": {
+                              "type": "number",
+                              "nullable": true,
+                              "description": "Ratio between 0 and 1 (for example 0.12 = 12%), or null when the metric has no rate."
+                            },
+                            "changePercent": {
+                              "type": "number",
+                              "nullable": true,
+                              "description": "Change in percent against the previous period of the same length. Null when that period has no data."
+                            }
+                          }
+                        },
+                        "interested": {
+                          "type": "object",
+                          "description": "Distinct leads marked interested. Rate: interested ÷ replied.",
+                          "properties": {
+                            "value": {
+                              "type": "number",
+                              "nullable": true,
+                              "description": "Value over the period. Null when it cannot be computed."
+                            },
+                            "rate": {
+                              "type": "number",
+                              "nullable": true,
+                              "description": "Ratio between 0 and 1 (for example 0.12 = 12%), or null when the metric has no rate."
+                            },
+                            "changePercent": {
+                              "type": "number",
+                              "nullable": true,
+                              "description": "Change in percent against the previous period of the same length. Null when that period has no data."
+                            }
+                          }
+                        },
+                        "pipelineGenerated": {
+                          "type": "object",
+                          "description": "Replies × average deal size. Null when no average deal size is set.",
+                          "properties": {
+                            "value": {
+                              "type": "number",
+                              "nullable": true,
+                              "description": "Value over the period. Null when it cannot be computed."
+                            },
+                            "rate": {
+                              "type": "number",
+                              "nullable": true,
+                              "description": "Ratio between 0 and 1 (for example 0.12 = 12%), or null when the metric has no rate."
+                            },
+                            "changePercent": {
+                              "type": "number",
+                              "nullable": true,
+                              "description": "Change in percent against the previous period of the same length. Null when that period has no data."
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "dateFrom or dateTo is missing, invalid, or dateFrom is after dateTo"
+          },
+          "403": {
+            "description": "The user the request acts as is not an owner or admin of the organization (for example a member impersonated with x-impersonate-user-id)."
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Get the team activity summary",
+        "tags": [
+          "Team activity"
+        ]
+      }
+    },
+    "/v1/team-activity/members": {
+      "get": {
+        "description": "Activity of each member of the organization over a date range, owner included, with the breakdown per campaign: the same figures as the Team activity page of the app. Only organization owners and admins can call it. Figures come from daily snapshots: each UTC day is computed at 04:30 UTC the next day, so today is not included yet.",
+        "operationId": "TeamActivityExternalController_getMembers",
+        "parameters": [
+          {
+            "name": "x-impersonate-user-id",
+            "in": "header",
+            "description": "ID of an organization member to act on behalf of. The API key user must be the owner of the organization and the target user must belong to the same organization. Team activity is only returned when the user the request acts as is an owner or admin.",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "dateFrom",
+            "required": true,
+            "in": "query",
+            "description": "First day of the period, YYYY-MM-DD (UTC)",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "dateTo",
+            "required": true,
+            "in": "query",
+            "description": "Last day of the period, YYYY-MM-DD (UTC), included",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "description": "Members per page, between 1 and 100 (default 25)",
+            "schema": {
+              "type": "number"
+            }
+          },
+          {
+            "name": "offset",
+            "required": false,
+            "in": "query",
+            "description": "Number of members to skip (default 0)",
+            "schema": {
+              "type": "number"
+            }
+          },
+          {
+            "name": "sortBy",
+            "required": false,
+            "in": "query",
+            "description": "Metric to sort the members by",
+            "schema": {
+              "enum": [
+                "leadsFound",
+                "contacted",
+                "linkedinInvitationsAccepted",
+                "messagesSent",
+                "replied",
+                "interested"
+              ],
+              "type": "string"
+            }
+          },
+          {
+            "name": "sortDirection",
+            "required": false,
+            "in": "query",
+            "description": "Used with sortBy (default desc)",
+            "schema": {
+              "enum": [
+                "asc",
+                "desc"
+              ],
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Team activity per member",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "organizationId": {
+                      "type": "number"
+                    },
+                    "dateFrom": {
+                      "type": "string",
+                      "example": "2026-10-01"
+                    },
+                    "dateTo": {
+                      "type": "string",
+                      "example": "2026-10-31"
+                    },
+                    "pagination": {
+                      "type": "object",
+                      "properties": {
+                        "limit": {
+                          "type": "number"
+                        },
+                        "offset": {
+                          "type": "number"
+                        },
+                        "total": {
+                          "type": "number"
+                        },
+                        "hasMore": {
+                          "type": "boolean"
+                        }
+                      }
+                    },
+                    "members": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "accountId": {
+                            "type": "number",
+                            "description": "User ID of the member (usable in the x-impersonate-user-id header)"
+                          },
+                          "firstName": {
+                            "type": "string",
+                            "nullable": true
+                          },
+                          "lastName": {
+                            "type": "string",
+                            "nullable": true
+                          },
+                          "email": {
+                            "type": "string"
+                          },
+                          "campaignsCount": {
+                            "type": "number"
+                          },
+                          "activeCampaignsCount": {
+                            "type": "number"
+                          },
+                          "outreach": {
+                            "type": "object",
+                            "description": "Channels used during the period",
+                            "properties": {
+                              "linkedin": {
+                                "type": "boolean"
+                              },
+                              "email": {
+                                "type": "boolean"
+                              }
+                            }
+                          },
+                          "metrics": {
+                            "type": "object",
+                            "properties": {
+                              "leadsFound": {
+                                "type": "object",
+                                "description": "Leads found by the source agents",
+                                "properties": {
+                                  "value": {
+                                    "type": "number",
+                                    "nullable": true,
+                                    "description": "Value over the period. Null when it cannot be computed."
+                                  },
+                                  "rate": {
+                                    "type": "number",
+                                    "nullable": true,
+                                    "description": "Ratio between 0 and 1 (for example 0.12 = 12%), or null when the metric has no rate."
+                                  },
+                                  "changePercent": {
+                                    "type": "number",
+                                    "nullable": true,
+                                    "description": "Change in percent against the previous period of the same length. Null when that period has no data."
+                                  }
+                                }
+                              },
+                              "contacted": {
+                                "type": "object",
+                                "description": "Distinct leads contacted",
+                                "properties": {
+                                  "value": {
+                                    "type": "number",
+                                    "nullable": true,
+                                    "description": "Value over the period. Null when it cannot be computed."
+                                  },
+                                  "rate": {
+                                    "type": "number",
+                                    "nullable": true,
+                                    "description": "Ratio between 0 and 1 (for example 0.12 = 12%), or null when the metric has no rate."
+                                  },
+                                  "changePercent": {
+                                    "type": "number",
+                                    "nullable": true,
+                                    "description": "Change in percent against the previous period of the same length. Null when that period has no data."
+                                  }
+                                }
+                              },
+                              "linkedinInvitationsSent": {
+                                "type": "object",
+                                "description": "LinkedIn invitations sent",
+                                "properties": {
+                                  "value": {
+                                    "type": "number",
+                                    "nullable": true,
+                                    "description": "Value over the period. Null when it cannot be computed."
+                                  },
+                                  "rate": {
+                                    "type": "number",
+                                    "nullable": true,
+                                    "description": "Ratio between 0 and 1 (for example 0.12 = 12%), or null when the metric has no rate."
+                                  },
+                                  "changePercent": {
+                                    "type": "number",
+                                    "nullable": true,
+                                    "description": "Change in percent against the previous period of the same length. Null when that period has no data."
+                                  }
+                                }
+                              },
+                              "linkedinInvitationsAccepted": {
+                                "type": "object",
+                                "description": "LinkedIn invitations accepted. Rate: accepted ÷ sent.",
+                                "properties": {
+                                  "value": {
+                                    "type": "number",
+                                    "nullable": true,
+                                    "description": "Value over the period. Null when it cannot be computed."
+                                  },
+                                  "rate": {
+                                    "type": "number",
+                                    "nullable": true,
+                                    "description": "Ratio between 0 and 1 (for example 0.12 = 12%), or null when the metric has no rate."
+                                  },
+                                  "changePercent": {
+                                    "type": "number",
+                                    "nullable": true,
+                                    "description": "Change in percent against the previous period of the same length. Null when that period has no data."
+                                  }
+                                }
+                              },
+                              "messagesSent": {
+                                "type": "object",
+                                "description": "LinkedIn messages (InMails and voice messages included) and emails sent",
+                                "properties": {
+                                  "value": {
+                                    "type": "number",
+                                    "nullable": true,
+                                    "description": "Value over the period. Null when it cannot be computed."
+                                  },
+                                  "rate": {
+                                    "type": "number",
+                                    "nullable": true,
+                                    "description": "Ratio between 0 and 1 (for example 0.12 = 12%), or null when the metric has no rate."
+                                  },
+                                  "changePercent": {
+                                    "type": "number",
+                                    "nullable": true,
+                                    "description": "Change in percent against the previous period of the same length. Null when that period has no data."
+                                  }
+                                }
+                              },
+                              "replied": {
+                                "type": "object",
+                                "description": "Distinct leads who replied. Rate: replied ÷ messages sent.",
+                                "properties": {
+                                  "value": {
+                                    "type": "number",
+                                    "nullable": true,
+                                    "description": "Value over the period. Null when it cannot be computed."
+                                  },
+                                  "rate": {
+                                    "type": "number",
+                                    "nullable": true,
+                                    "description": "Ratio between 0 and 1 (for example 0.12 = 12%), or null when the metric has no rate."
+                                  },
+                                  "changePercent": {
+                                    "type": "number",
+                                    "nullable": true,
+                                    "description": "Change in percent against the previous period of the same length. Null when that period has no data."
+                                  }
+                                }
+                              },
+                              "interested": {
+                                "type": "object",
+                                "description": "Distinct leads marked interested. Rate: interested ÷ replied.",
+                                "properties": {
+                                  "value": {
+                                    "type": "number",
+                                    "nullable": true,
+                                    "description": "Value over the period. Null when it cannot be computed."
+                                  },
+                                  "rate": {
+                                    "type": "number",
+                                    "nullable": true,
+                                    "description": "Ratio between 0 and 1 (for example 0.12 = 12%), or null when the metric has no rate."
+                                  },
+                                  "changePercent": {
+                                    "type": "number",
+                                    "nullable": true,
+                                    "description": "Change in percent against the previous period of the same length. Null when that period has no data."
+                                  }
+                                }
+                              }
+                            }
+                          },
+                          "campaigns": {
+                            "type": "array",
+                            "items": {
+                              "type": "object",
+                              "properties": {
+                                "campaignId": {
+                                  "type": "number"
+                                },
+                                "accountId": {
+                                  "type": "number"
+                                },
+                                "name": {
+                                  "type": "string"
+                                },
+                                "status": {
+                                  "type": "string",
+                                  "enum": [
+                                    "active",
+                                    "paused",
+                                    "leads_sourcing_only",
+                                    "outreach_only"
+                                  ]
+                                },
+                                "outreach": {
+                                  "type": "object",
+                                  "description": "Channels used during the period",
+                                  "properties": {
+                                    "linkedin": {
+                                      "type": "boolean"
+                                    },
+                                    "email": {
+                                      "type": "boolean"
+                                    }
+                                  }
+                                },
+                                "metrics": {
+                                  "type": "object",
+                                  "properties": {
+                                    "leadsFound": {
+                                      "type": "object",
+                                      "description": "Leads found by the source agents",
+                                      "properties": {
+                                        "value": {
+                                          "type": "number",
+                                          "nullable": true,
+                                          "description": "Value over the period. Null when it cannot be computed."
+                                        },
+                                        "rate": {
+                                          "type": "number",
+                                          "nullable": true,
+                                          "description": "Ratio between 0 and 1 (for example 0.12 = 12%), or null when the metric has no rate."
+                                        },
+                                        "changePercent": {
+                                          "type": "number",
+                                          "nullable": true,
+                                          "description": "Change in percent against the previous period of the same length. Null when that period has no data."
+                                        }
+                                      }
+                                    },
+                                    "contacted": {
+                                      "type": "object",
+                                      "description": "Distinct leads contacted",
+                                      "properties": {
+                                        "value": {
+                                          "type": "number",
+                                          "nullable": true,
+                                          "description": "Value over the period. Null when it cannot be computed."
+                                        },
+                                        "rate": {
+                                          "type": "number",
+                                          "nullable": true,
+                                          "description": "Ratio between 0 and 1 (for example 0.12 = 12%), or null when the metric has no rate."
+                                        },
+                                        "changePercent": {
+                                          "type": "number",
+                                          "nullable": true,
+                                          "description": "Change in percent against the previous period of the same length. Null when that period has no data."
+                                        }
+                                      }
+                                    },
+                                    "linkedinInvitationsSent": {
+                                      "type": "object",
+                                      "description": "LinkedIn invitations sent",
+                                      "properties": {
+                                        "value": {
+                                          "type": "number",
+                                          "nullable": true,
+                                          "description": "Value over the period. Null when it cannot be computed."
+                                        },
+                                        "rate": {
+                                          "type": "number",
+                                          "nullable": true,
+                                          "description": "Ratio between 0 and 1 (for example 0.12 = 12%), or null when the metric has no rate."
+                                        },
+                                        "changePercent": {
+                                          "type": "number",
+                                          "nullable": true,
+                                          "description": "Change in percent against the previous period of the same length. Null when that period has no data."
+                                        }
+                                      }
+                                    },
+                                    "linkedinInvitationsAccepted": {
+                                      "type": "object",
+                                      "description": "LinkedIn invitations accepted. Rate: accepted ÷ sent.",
+                                      "properties": {
+                                        "value": {
+                                          "type": "number",
+                                          "nullable": true,
+                                          "description": "Value over the period. Null when it cannot be computed."
+                                        },
+                                        "rate": {
+                                          "type": "number",
+                                          "nullable": true,
+                                          "description": "Ratio between 0 and 1 (for example 0.12 = 12%), or null when the metric has no rate."
+                                        },
+                                        "changePercent": {
+                                          "type": "number",
+                                          "nullable": true,
+                                          "description": "Change in percent against the previous period of the same length. Null when that period has no data."
+                                        }
+                                      }
+                                    },
+                                    "messagesSent": {
+                                      "type": "object",
+                                      "description": "LinkedIn messages (InMails and voice messages included) and emails sent",
+                                      "properties": {
+                                        "value": {
+                                          "type": "number",
+                                          "nullable": true,
+                                          "description": "Value over the period. Null when it cannot be computed."
+                                        },
+                                        "rate": {
+                                          "type": "number",
+                                          "nullable": true,
+                                          "description": "Ratio between 0 and 1 (for example 0.12 = 12%), or null when the metric has no rate."
+                                        },
+                                        "changePercent": {
+                                          "type": "number",
+                                          "nullable": true,
+                                          "description": "Change in percent against the previous period of the same length. Null when that period has no data."
+                                        }
+                                      }
+                                    },
+                                    "replied": {
+                                      "type": "object",
+                                      "description": "Distinct leads who replied. Rate: replied ÷ messages sent.",
+                                      "properties": {
+                                        "value": {
+                                          "type": "number",
+                                          "nullable": true,
+                                          "description": "Value over the period. Null when it cannot be computed."
+                                        },
+                                        "rate": {
+                                          "type": "number",
+                                          "nullable": true,
+                                          "description": "Ratio between 0 and 1 (for example 0.12 = 12%), or null when the metric has no rate."
+                                        },
+                                        "changePercent": {
+                                          "type": "number",
+                                          "nullable": true,
+                                          "description": "Change in percent against the previous period of the same length. Null when that period has no data."
+                                        }
+                                      }
+                                    },
+                                    "interested": {
+                                      "type": "object",
+                                      "description": "Distinct leads marked interested. Rate: interested ÷ replied.",
+                                      "properties": {
+                                        "value": {
+                                          "type": "number",
+                                          "nullable": true,
+                                          "description": "Value over the period. Null when it cannot be computed."
+                                        },
+                                        "rate": {
+                                          "type": "number",
+                                          "nullable": true,
+                                          "description": "Ratio between 0 and 1 (for example 0.12 = 12%), or null when the metric has no rate."
+                                        },
+                                        "changePercent": {
+                                          "type": "number",
+                                          "nullable": true,
+                                          "description": "Change in percent against the previous period of the same length. Null when that period has no data."
+                                        }
+                                      }
+                                    }
+                                  }
+                                }
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid dates, limit, offset, sortBy or sortDirection"
+          },
+          "403": {
+            "description": "The user the request acts as is not an owner or admin of the organization (for example a member impersonated with x-impersonate-user-id)."
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Get the team activity per member",
+        "tags": [
+          "Team activity"
         ]
       }
     }
@@ -4478,7 +5243,7 @@
           },
           "linkedin_template": {
             "type": "string",
-            "description": "LinkedIn template text"
+            "description": "LinkedIn template text (deprecated)"
           },
           "personalizedMessages": {
             "description": "Personalized messages for the contact",

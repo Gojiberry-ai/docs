@@ -131,6 +131,13 @@
               "api-reference/excluded-contacts/get-all-excluded-contacts-with-pagination-and-search",
               "api-reference/excluded-contacts/delete-an-excluded-contact"
             ]
+          },
+          {
+            "group": "Team activity",
+            "pages": [
+              "api-reference/team-activity/get-the-team-activity-summary",
+              "api-reference/team-activity/get-the-team-activity-per-member"
+            ]
           }
         ]
       },
