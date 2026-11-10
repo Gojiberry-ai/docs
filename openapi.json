@@ -2683,6 +2683,10 @@
                     "type": "boolean",
                     "description": "true: only B2B companies, false: only B2C companies. Omit to get both."
                   },
+                  "isSaas": {
+                    "type": "boolean",
+                    "description": "true: only companies that sell software as a service, false: only companies that do not. Omit to get both."
+                  },
                   "technologiesUsed": {
                     "type": "array",
                     "items": {
@@ -4614,6 +4618,109 @@
           "Team activity"
         ]
       }
+    },
+    "/v1/company/find-by-contact": {
+      "get": {
+        "description": "Returns the company of one of your contacts, found from the contact's LinkedIn company page (companyUrl). Rate limited to 30 requests per minute and 5000 per day.",
+        "operationId": "CompanyExternalController_findByContact",
+        "parameters": [
+          {
+            "name": "x-impersonate-user-id",
+            "in": "header",
+            "description": "ID of an organization member to act on behalf of. The API key user must be the owner of the organization and the target user must belong to the same organization.",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "contactId",
+            "required": true,
+            "in": "query",
+            "description": "ID of the contact",
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Company of the contact",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "number",
+                      "example": 4028157,
+                      "description": "LinkedIn company ID"
+                    },
+                    "name": {
+                      "type": "string",
+                      "example": "Gojiberry"
+                    },
+                    "linkedinIdentifier": {
+                      "type": "string",
+                      "example": "gojiberryai",
+                      "description": "LinkedIn company page identifier"
+                    },
+                    "picture": {
+                      "type": "string",
+                      "description": "Company logo URL"
+                    },
+                    "description": {
+                      "type": "string"
+                    },
+                    "website": {
+                      "type": "string",
+                      "example": "https://gojiberry.ai"
+                    },
+                    "size": {
+                      "type": "string",
+                      "example": "11-50",
+                      "description": "Employee count range"
+                    },
+                    "location": {
+                      "type": "string",
+                      "example": "Paris, France",
+                      "description": "Headquarters"
+                    },
+                    "industry": {
+                      "type": "string",
+                      "example": "Software Development"
+                    },
+                    "youtubeUrl": {
+                      "type": "string"
+                    },
+                    "crunchbaseProfileUrl": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "contactId is missing or not a number"
+          },
+          "404": {
+            "description": "Contact not found, or no company found for this contact (no LinkedIn company page, or company unknown)"
+          },
+          "429": {
+            "description": "Rate limit exceeded (30 requests per minute or 5000 per day)"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Get the company of a contact",
+        "tags": [
+          "Companies"
+        ]
+      }
     }
   },
   "info": {
@@ -6194,6 +6301,11 @@
           "contactId": {
             "type": "number",
             "description": "Linked Gojiberry contact id, when matched",
+            "nullable": true
+          },
+          "salesNavUrn": {
+            "type": "string",
+            "description": "Lead's Sales Navigator URN, set when the conversation lives in Sales Navigator",
             "nullable": true
           },
           "createdAt": {

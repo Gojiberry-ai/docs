@@ -138,6 +138,12 @@
               "api-reference/team-activity/get-the-team-activity-summary",
               "api-reference/team-activity/get-the-team-activity-per-member"
             ]
+          },
+          {
+            "group": "Companies",
+            "pages": [
+              "api-reference/companies/get-the-company-of-a-contact"
+            ]
           }
         ]
       },
