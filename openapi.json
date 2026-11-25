@@ -1186,7 +1186,7 @@
     },
     "/v1/campaign": {
       "post": {
-        "description": "Create a campaign with its steps, lead source lists and sending seats. A campaign is the **campaign agent** — the outreach half of a **Full Cycle agent**: create the list first (`POST /v1/list`), then the source agent that fills it with leads (`POST /v1/agent`), then this campaign to reach out to them. **At least one list (lead source) is required.** The campaign reaches out to the contacts of its lists; lists are typically filled by a source agent (the lead finder, see `POST /v1/agent`) or by importing contacts. If the campaign contains any LinkedIn step (invitation, invitationNote, message, voiceMessage, visitProfile, likePosts), a `linkedinSeatId` is required. If it contains email steps, at least one `emailSeatId` is required; multiple email seats (up to 100) are only allowed when the campaign has email steps exclusively. Step rules: at most one Connection Request step, an invitation cannot come after a LinkedIn message or voice message, and `delayAfterLastStep` must be at least 1 day (see the `steps` field for per-type fields and limits). When the campaign has a Connection Request step, 1st-degree connections are excluded from the campaign by default. **Once activated, the campaign starts the outreach automatically on a daily basis.** The launch hours can be configured in the LinkedIn seat settings.",
+        "description": "Create a campaign with its steps, lead source lists and sending seats. A campaign is the **campaign agent** — the outreach half of a **Full Cycle agent**: create the list first (`POST /v1/list`), then the source agent that fills it with leads (`POST /v1/agent`), then this campaign to reach out to them. **At least one list (lead source) is required.** The campaign reaches out to the contacts of its lists; lists are typically filled by a source agent (the lead finder, see `POST /v1/agent`) or by importing contacts. If the campaign contains any LinkedIn step (invitation, invitationNote, message, voiceMessage, visitProfile, likePosts), a `linkedinSeatId` is required. If it contains email steps, at least one `emailSeatId` is required; multiple email seats (up to 100) are only allowed when the campaign has email steps exclusively. Step rules: at most one Connection Request step, an invitation cannot come after a LinkedIn message or voice message, and `delayAfterLastStep` must be at least 1 day (see the `steps` field for per-type fields and limits). When the campaign has a Connection Request step, 1st-degree connections are excluded from the campaign by default. **Once activated, the campaign starts the outreach automatically on a daily basis.** The launch hours can be configured in the LinkedIn seat settings. A campaign created active (the default) needs free campaign capacity, as when activating one with `PATCH /v1/campaign/{id}/status`: each account can run 2 campaigns, plus one per assigned Full-cycle Agent add-on. If the account is at capacity, a Full-cycle Agent add-on from the organization is assigned automatically; otherwise the request fails with 400 and no campaign is created. Pass `active: false` to create it paused.",
         "operationId": "CampaignExternalController_create",
         "parameters": [
           {
@@ -1221,7 +1221,7 @@
             }
           },
           "400": {
-            "description": "Invalid steps or seat configuration"
+            "description": "Invalid steps or seat configuration, or no free campaign capacity to create it active"
           },
           "404": {
             "description": "List or seat not found"
@@ -2202,6 +2202,264 @@
         ]
       }
     },
+    "/v1/agent/{id}/advanced-qualification": {
+      "get": {
+        "description": "Advanced qualification checks the company of every lead this agent finds against criteria you wrote, before the lead is added. It is free. With no criteria it is off and leads are added with no research. `leadsWaiting` counts leads held until their company is researched: they are not contacts yet, and they are not in the campaign. A company that clearly fails a criterion is rejected when `onlyKeepMatchingLeads` is true, and kept (with the result stored on the lead) when it is false. A criterion Goji cannot confirm never rejects a lead.",
+        "operationId": "AgentExternalController_getAdvancedQualification",
+        "parameters": [
+          {
+            "name": "x-impersonate-user-id",
+            "in": "header",
+            "description": "ID of an organization member to act on behalf of. The API key user must be the owner of the organization and the target user must belong to the same organization.",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Current settings. `enabled` is false when there are no criteria.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AgentAdvancedQualificationDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Advanced qualification is not available for this account."
+          },
+          "404": {
+            "description": "Agent not found."
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Get a source agent's Advanced qualification",
+        "tags": [
+          "Lead source agents"
+        ]
+      },
+      "put": {
+        "description": "Saves a new version of the settings. It applies only to companies processed from now on: a company already fully researched keeps that result, and nothing is backfilled. Leads already waiting may be released under the new settings. Send at most 2 criteria. An empty `criteria` list turns Advanced qualification off. A criterion already saved on the agent is kept word for word, so its stored answers stay reusable. Any other criterion is rewritten into a yes/no condition, or into one condition per part when it combines several (the 2-criteria limit applies after the split). If any part cannot be researched (it is too vague, a standard filter already covers it, or it is not a company characteristic), the save is rejected and nothing changes. The research itself is free.",
+        "operationId": "AgentExternalController_saveAdvancedQualification",
+        "parameters": [
+          {
+            "name": "x-impersonate-user-id",
+            "in": "header",
+            "description": "ID of an organization member to act on behalf of. The API key user must be the owner of the organization and the target user must belong to the same organization.",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SaveAgentAdvancedQualificationExternalDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Settings saved. Applies to companies processed from now on.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AgentAdvancedQualificationDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "A criterion or part of one was refused, or there are more than 2 or duplicates once split."
+          },
+          "403": {
+            "description": "Advanced qualification is not available for this account."
+          },
+          "404": {
+            "description": "Agent not found."
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Replace a source agent's Advanced qualification",
+        "tags": [
+          "Lead source agents"
+        ]
+      }
+    },
+    "/v1/agent/{id}/advanced-qualification/results": {
+      "get": {
+        "description": "The answer of each of the agent's current criteria on the given contacts, for leads this agent accepted, with Goji's reasoning and up to three proofs. One entry per contact that has at least one answer, with criteria in saved order. Contacts with no answer, and criteria the agent no longer has, are omitted. Pass `contactIds` as comma-separated ids, at most 100. To list the agent's leads, use `GET /v1/contact` with the agent's `listId`.",
+        "operationId": "AgentExternalController_getAdvancedQualificationResults",
+        "parameters": [
+          {
+            "name": "x-impersonate-user-id",
+            "in": "header",
+            "description": "ID of an organization member to act on behalf of. The API key user must be the owner of the organization and the target user must belong to the same organization.",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "number"
+            }
+          },
+          {
+            "name": "contactIds",
+            "required": true,
+            "in": "query",
+            "description": "Comma-separated contact ids, at most 100.",
+            "schema": {
+              "example": "1,2,3",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "One entry per contact with at least one answer.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/AgentAdvancedQualificationContactResultDto"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "contactIds is missing, not a list of integers, or longer than 100."
+          },
+          "403": {
+            "description": "Advanced qualification is not available for this account."
+          },
+          "404": {
+            "description": "Agent not found."
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Get Advanced qualification results for a source agent's leads",
+        "tags": [
+          "Lead source agents"
+        ]
+      }
+    },
+    "/v1/agent/{id}/advanced-qualification/results/{contactId}": {
+      "put": {
+        "description": "Overrides the answer to one of the agent's current criteria for a lead the agent accepted, like changing the verdict in the contact drawer. Free. The new answer applies to every lead of the same company on the agent's list, and `decidedManually` becomes true on them. It does not change the agent's own stored answer: the lead stays in the campaign, and later leads of that company are still decided by the research. Only an answer the research already resolved can be overridden.",
+        "operationId": "AgentExternalController_decideAdvancedQualificationResult",
+        "parameters": [
+          {
+            "name": "x-impersonate-user-id",
+            "in": "header",
+            "description": "ID of an organization member to act on behalf of. The API key user must be the owner of the organization and the target user must belong to the same organization.",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "number"
+            }
+          },
+          {
+            "name": "contactId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DecideAgentAdvancedQualificationExternalDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Answer set. `contactsUpdated` counts the leads of that company that were changed.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "contactsUpdated": {
+                      "type": "number"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Advanced qualification is not available for this account."
+          },
+          "404": {
+            "description": "Agent not found, criterion not among the agent's current criteria, contact not on the agent's list, or no resolved answer to override."
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Set an Advanced qualification answer by hand on a source agent's lead",
+        "tags": [
+          "Lead source agents"
+        ]
+      }
+    },
     "/v1/directory/industries": {
       "get": {
         "description": "Return the suggested values for the `industry` filter of `POST /v1/directory/leads/search` and `POST /v1/directory/companies/search`, both flat and grouped by category. Free of charge. Other industry values are accepted by the search endpoints, but these labels line up with the pool taxonomy and give the best results.",
@@ -2252,7 +2510,7 @@
                               "type": "string"
                             },
                             "example": [
-                              "Software Development & SaaS",
+                              "Software Development",
                               "Cybersecurity"
                             ]
                           }
@@ -2347,7 +2605,7 @@
     },
     "/v1/directory/leads/search": {
       "post": {
-        "description": "Search the lead pool with filters. Free of charge: only id, firstName, jobTitle, location and industry are filled — all other fields are returned empty. Use `POST /v1/directory/leads/reveal` with the returned ids to get the full lead data (0.5 credit per lead). Results are deterministic (no randomness), so the same filters + page always return the same leads.",
+        "description": "Search the lead pool with filters. Free of charge: only id, firstName, jobTitle, location and industry are filled — all other fields are returned empty. Use `POST /v1/directory/leads/reveal` with the returned ids to get the full lead data (0.5 credit per lead). Each lead carries `alreadyInContacts: true` when it is already one of your contacts; the reveal skips those leads without charging them. Results are deterministic (no randomness), so the same filters + page always return the same leads.",
         "operationId": "DirectoryExternalController_search",
         "parameters": [
           {
@@ -2480,7 +2738,13 @@
                     "leads": {
                       "type": "array",
                       "items": {
-                        "type": "object"
+                        "type": "object",
+                        "properties": {
+                          "alreadyInContacts": {
+                            "type": "boolean",
+                            "description": "True when this person is already one of your contacts (matched on LinkedIn member id or profile identifier)"
+                          }
+                        }
                       }
                     },
                     "total": {
@@ -2515,7 +2779,7 @@
     },
     "/v1/directory/leads/reveal": {
       "post": {
-        "description": "Return the full data of the leads with the given ids (from `POST /v1/directory/leads/search`). Each revealed lead costs 0.5 credit. If the credit balance cannot cover all requested ids, only the first affordable leads are revealed and charged. When `listId` is provided, the revealed leads are also saved as contacts into that list (no extra credit cost): leads already in the workspace, excluded, or missing a first/last name are skipped. The save is synchronous, so a large reveal with `listId` can take noticeably longer — configure your HTTP client timeout accordingly.",
+        "description": "Return the full data of the leads with the given ids (from `POST /v1/directory/leads/search`). Each revealed lead costs 0.5 credit. Leads already among your contacts are not revealed nor charged: they are listed in `alreadyInContacts` with the id of your existing contact. If the credit balance cannot cover all requested ids, only the first affordable leads are revealed and charged. When `listId` is provided, the revealed leads are also saved as contacts into that list (no extra credit cost): leads already in the workspace, excluded, or missing a first/last name are skipped. The save is synchronous, so a large reveal with `listId` can take noticeably longer — configure your HTTP client timeout accordingly.",
         "operationId": "DirectoryExternalController_reveal",
         "parameters": [
           {
@@ -2584,6 +2848,23 @@
                     },
                     "creditsUsed": {
                       "type": "number"
+                    },
+                    "alreadyInContacts": {
+                      "type": "array",
+                      "description": "Requested leads that are already your contacts: not returned in `leads` and not charged",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "number",
+                            "description": "Lead id (LinkedIn member id)"
+                          },
+                          "contactId": {
+                            "type": "number",
+                            "description": "Id of your existing contact"
+                          }
+                        }
+                      }
                     },
                     "savedToList": {
                       "type": "number",
@@ -3129,6 +3410,12 @@
                 }
               }
             }
+          },
+          "400": {
+            "description": "The message could not be sent, for example because LinkedIn rejected it or the LinkedIn session expired and the account must be reconnected."
+          },
+          "503": {
+            "description": "LinkedIn could not be reached for this account for a moment. The account is still connected: retry after a minute, do not reconnect it."
           }
         },
         "security": [
@@ -3204,7 +3491,7 @@
     },
     "/v1/organization": {
       "get": {
-        "description": "Retrieve the organization of the authenticated user.",
+        "description": "Retrieve the organization of the authenticated user. When the user works from their own version of the company profile, companyName, website, industry, companySize, description and linkedinPage come from that version.",
         "operationId": "OrganizationExternalController_getOrganization",
         "parameters": [
           {
@@ -3857,7 +4144,7 @@
     },
     "/v1/team-activity": {
       "get": {
-        "description": "Team totals for the whole organization over a date range, owner included: the same figures as the Team activity page of the app. Only organization owners and admins can call it. Figures come from daily snapshots: each UTC day is computed at 04:30 UTC the next day, so today is not included yet.",
+        "description": "Team totals for the whole organization over a date range, owner included: the same figures as the Team activity page of the app. Only organization owners and admins can call it. Leads found and interested come from daily snapshots: each UTC day is computed at 04:30 UTC the next day, so today is not included yet. The other figures count each lead once over the whole period, from the live outreach log.",
         "operationId": "TeamActivityExternalController_getSummary",
         "parameters": [
           {
@@ -3947,7 +4234,7 @@
                         },
                         "linkedinInvitationsSent": {
                           "type": "object",
-                          "description": "LinkedIn invitations sent",
+                          "description": "Distinct leads sent a LinkedIn invitation",
                           "properties": {
                             "value": {
                               "type": "number",
@@ -3968,7 +4255,7 @@
                         },
                         "replied": {
                           "type": "object",
-                          "description": "Distinct leads who replied. Rate: replied ÷ messages sent.",
+                          "description": "Distinct leads who replied. Rate: replied ÷ messagesSent.",
                           "properties": {
                             "value": {
                               "type": "number",
@@ -3989,7 +4276,7 @@
                         },
                         "messagesSent": {
                           "type": "object",
-                          "description": "LinkedIn messages (InMails and voice messages included) and emails sent",
+                          "description": "Distinct leads sent an invitation note, a LinkedIn message (InMail and voice message included) or an email",
                           "properties": {
                             "value": {
                               "type": "number",
@@ -4010,7 +4297,7 @@
                         },
                         "replyRate": {
                           "type": "object",
-                          "description": "Replied ÷ messages sent",
+                          "description": "Replied ÷ messagesSent, both distinct leads",
                           "properties": {
                             "value": {
                               "type": "number",
@@ -4098,7 +4385,7 @@
     },
     "/v1/team-activity/members": {
       "get": {
-        "description": "Activity of each member of the organization over a date range, owner included, with the breakdown per campaign: the same figures as the Team activity page of the app. Only organization owners and admins can call it. Figures come from daily snapshots: each UTC day is computed at 04:30 UTC the next day, so today is not included yet.",
+        "description": "Activity of each member of the organization over a date range, owner included, with the breakdown per campaign: the same figures as the Team activity page of the app. Only organization owners and admins can call it. Leads found and interested come from daily snapshots: each UTC day is computed at 04:30 UTC the next day, so today is not included yet. The other figures count each lead once over the whole period, from the live outreach log.",
         "operationId": "TeamActivityExternalController_getMembers",
         "parameters": [
           {
@@ -4298,7 +4585,7 @@
                               },
                               "linkedinInvitationsSent": {
                                 "type": "object",
-                                "description": "LinkedIn invitations sent",
+                                "description": "Distinct leads sent a LinkedIn invitation",
                                 "properties": {
                                   "value": {
                                     "type": "number",
@@ -4319,7 +4606,7 @@
                               },
                               "linkedinInvitationsAccepted": {
                                 "type": "object",
-                                "description": "LinkedIn invitations accepted. Rate: accepted ÷ sent.",
+                                "description": "Distinct leads who accepted a LinkedIn invitation their campaign sent. Rate: accepted ÷ sent.",
                                 "properties": {
                                   "value": {
                                     "type": "number",
@@ -4340,7 +4627,7 @@
                               },
                               "messagesSent": {
                                 "type": "object",
-                                "description": "LinkedIn messages (InMails and voice messages included) and emails sent",
+                                "description": "Distinct leads sent an invitation note, a LinkedIn message (InMail and voice message included) or an email",
                                 "properties": {
                                   "value": {
                                     "type": "number",
@@ -4361,7 +4648,7 @@
                               },
                               "replied": {
                                 "type": "object",
-                                "description": "Distinct leads who replied. Rate: replied ÷ messages sent.",
+                                "description": "Distinct leads who replied. Rate: replied ÷ messagesSent.",
                                 "properties": {
                                   "value": {
                                     "type": "number",
@@ -4485,7 +4772,7 @@
                                     },
                                     "linkedinInvitationsSent": {
                                       "type": "object",
-                                      "description": "LinkedIn invitations sent",
+                                      "description": "Distinct leads sent a LinkedIn invitation",
                                       "properties": {
                                         "value": {
                                           "type": "number",
@@ -4506,7 +4793,7 @@
                                     },
                                     "linkedinInvitationsAccepted": {
                                       "type": "object",
-                                      "description": "LinkedIn invitations accepted. Rate: accepted ÷ sent.",
+                                      "description": "Distinct leads who accepted a LinkedIn invitation their campaign sent. Rate: accepted ÷ sent.",
                                       "properties": {
                                         "value": {
                                           "type": "number",
@@ -4527,7 +4814,7 @@
                                     },
                                     "messagesSent": {
                                       "type": "object",
-                                      "description": "LinkedIn messages (InMails and voice messages included) and emails sent",
+                                      "description": "Distinct leads sent an invitation note, a LinkedIn message (InMail and voice message included) or an email",
                                       "properties": {
                                         "value": {
                                           "type": "number",
@@ -4548,7 +4835,7 @@
                                     },
                                     "replied": {
                                       "type": "object",
-                                      "description": "Distinct leads who replied. Rate: replied ÷ messages sent.",
+                                      "description": "Distinct leads who replied. Rate: replied ÷ messagesSent.",
                                       "properties": {
                                         "value": {
                                           "type": "number",
@@ -5283,6 +5570,22 @@
             "description": "Whether email has been enriched",
             "default": false
           },
+          "emailSource": {
+            "type": "string",
+            "description": "Where the enrichment found the email: 'pool' for a known address, otherwise the provider. Empty when the email was imported or typed in.",
+            "nullable": true
+          },
+          "emailCatchAll": {
+            "type": "boolean",
+            "description": "Whether the enriched email's domain accepts any address, so its mailbox could not be verified. Empty when unknown.",
+            "nullable": true
+          },
+          "emailBounceRetriedAt": {
+            "format": "date-time",
+            "type": "string",
+            "description": "When a bounce of the enriched email started the free search for another one",
+            "nullable": true
+          },
           "phoneEnriched": {
             "type": "boolean",
             "description": "Whether phone has been enriched",
@@ -5626,7 +5929,7 @@
             "nullable": true
           },
           "personalizedMessages": {
-            "description": "Personalized messages for each campaign step. This array REPLACES the stored messages: always resend every step you want to keep, with all of its fields (content, subject, parts). Any step or field left out of the payload is erased.",
+            "description": "Personalized messages for campaign steps. Each entry updates that stepNumber; omitted steps are kept. An empty array is ignored.",
             "type": "array",
             "items": {
               "$ref": "#/components/schemas/PersonalizedMessageDto"
@@ -5738,7 +6041,7 @@
           },
           "active": {
             "type": "boolean",
-            "description": "Whether the campaign starts active. Once active, the campaign starts the outreach automatically on a daily basis; the launch hours can be configured in the LinkedIn seat settings.",
+            "description": "Whether the campaign starts active. Once active, the campaign starts the outreach automatically on a daily basis; the launch hours can be configured in the LinkedIn seat settings. Starting active needs free campaign capacity, otherwise the creation fails with 400.",
             "example": true,
             "default": true
           },
@@ -6069,7 +6372,7 @@
           },
           "leadsCreated": {
             "type": "number",
-            "description": "Number of leads imported into the user platform after the AI scoring & filtering pipeline. These are the qualified leads that ended up on the agent's list and become contacts of the linked outreach campaign."
+            "description": "Leads from this run that passed scoring. Includes leads still waiting on Deep Qualification, which can be rejected later and never become contacts. Does not include leads Deep Qualification had already rejected when this row was written."
           },
           "totalLeads": {
             "type": "number",
@@ -6226,6 +6529,194 @@
             "description": "Max number of credits per month"
           }
         }
+      },
+      "AgentAdvancedQualificationCriterionDto": {
+        "type": "object",
+        "properties": {
+          "criterion": {
+            "type": "string",
+            "description": "Yes/no condition researched on each company, in saved order.",
+            "maxLength": 255
+          },
+          "shortName": {
+            "type": "string",
+            "description": "Short label for the criterion.",
+            "nullable": true
+          }
+        },
+        "required": [
+          "criterion",
+          "shortName"
+        ]
+      },
+      "AgentAdvancedQualificationDto": {
+        "type": "object",
+        "properties": {
+          "enabled": {
+            "type": "boolean",
+            "description": "False when the agent has no criteria: new leads are added with no research."
+          },
+          "criteria": {
+            "description": "Current criteria. Empty when Advanced qualification is off.",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AgentAdvancedQualificationCriterionDto"
+            }
+          },
+          "onlyKeepMatchingLeads": {
+            "type": "boolean",
+            "description": "When true, a company that clearly fails a criterion is rejected. When false, every researched lead is kept. True when the agent has never had settings saved."
+          },
+          "leadsWaiting": {
+            "type": "number",
+            "description": "Leads held until their company is researched. They are not contacts yet, and they are not in the campaign."
+          }
+        },
+        "required": [
+          "enabled",
+          "criteria",
+          "onlyKeepMatchingLeads",
+          "leadsWaiting"
+        ]
+      },
+      "AgentAdvancedQualificationCriterionInputDto": {
+        "type": "object",
+        "properties": {
+          "criterion": {
+            "type": "string",
+            "description": "A company characteristic for Goji to check, in your own words. A criterion already saved on this agent is kept word for word. Any other is rewritten into a yes/no condition, or one per part when it combines several, and the save is rejected if any part cannot be researched.",
+            "maxLength": 255
+          }
+        },
+        "required": [
+          "criterion"
+        ]
+      },
+      "SaveAgentAdvancedQualificationExternalDto": {
+        "type": "object",
+        "properties": {
+          "criteria": {
+            "description": "Criteria in saved order, at most 2. This replaces the agent's criteria. An empty list turns Advanced qualification off, and leads already waiting are added with no research.",
+            "maxItems": 2,
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AgentAdvancedQualificationCriterionInputDto"
+            }
+          },
+          "onlyKeepMatchingLeads": {
+            "type": "boolean",
+            "description": "When true, a company that clearly fails a criterion is rejected and its leads never enter the campaign. When false, every researched lead is kept and each criterion result is stored on the lead. A criterion Goji cannot confirm never rejects a lead, either way."
+          }
+        },
+        "required": [
+          "criteria",
+          "onlyKeepMatchingLeads"
+        ]
+      },
+      "AgentAdvancedQualificationProofDto": {
+        "type": "object",
+        "properties": {
+          "quote": {
+            "type": "string",
+            "description": "Fact supporting the answer."
+          },
+          "url": {
+            "type": "string",
+            "description": "Page the fact was read on. Null for a fact from Goji's company profile.",
+            "nullable": true
+          }
+        },
+        "required": [
+          "quote",
+          "url"
+        ]
+      },
+      "AgentAdvancedQualificationCriterionResultDto": {
+        "type": "object",
+        "properties": {
+          "criterion": {
+            "type": "string",
+            "description": "Criterion the answer belongs to, matching the text in the settings.",
+            "maxLength": 255
+          },
+          "result": {
+            "type": "string",
+            "description": "met: the company matches. not_met: it clearly does not. uncertain: Goji could not confirm. error: the check failed.",
+            "enum": [
+              "pending",
+              "met",
+              "not_met",
+              "uncertain",
+              "error"
+            ]
+          },
+          "reasoning": {
+            "type": "string",
+            "description": "Why Goji gave this answer. Kept when the answer is changed by hand.",
+            "nullable": true
+          },
+          "proofs": {
+            "description": "Up to three facts supporting the answer.",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AgentAdvancedQualificationProofDto"
+            }
+          },
+          "decidedManually": {
+            "type": "boolean",
+            "description": "True when a user set this answer by hand, in the app or through the API, instead of the research."
+          }
+        },
+        "required": [
+          "criterion",
+          "result",
+          "reasoning",
+          "proofs",
+          "decidedManually"
+        ]
+      },
+      "AgentAdvancedQualificationContactResultDto": {
+        "type": "object",
+        "properties": {
+          "contactId": {
+            "type": "number",
+            "description": "Contact the answers were copied onto when the lead was accepted."
+          },
+          "results": {
+            "description": "Answers for the agent's current criteria, in saved order. A criterion with no answer is omitted.",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AgentAdvancedQualificationCriterionResultDto"
+            }
+          }
+        },
+        "required": [
+          "contactId",
+          "results"
+        ]
+      },
+      "DecideAgentAdvancedQualificationExternalDto": {
+        "type": "object",
+        "properties": {
+          "criterion": {
+            "type": "string",
+            "description": "One of the agent's current criteria, as returned by GET /v1/agent/{id}/advanced-qualification (case ignored).",
+            "maxLength": 255
+          },
+          "result": {
+            "type": "string",
+            "description": "The answer to set by hand: met, not_met, or uncertain.",
+            "enum": [
+              "met",
+              "not_met",
+              "uncertain"
+            ]
+          }
+        },
+        "required": [
+          "criterion",
+          "result"
+        ]
       },
       "Unibox2Thread": {
         "type": "object",

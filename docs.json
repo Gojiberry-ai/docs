@@ -97,7 +97,11 @@
               "api-reference/agents/get-a-source-agent",
               "api-reference/agents/update-a-source-agent",
               "api-reference/agents/delete-a-source-agent",
-              "api-reference/agents/logs"
+              "api-reference/agents/logs",
+              "api-reference/agents/get-a-source-agent-s-advanced-qualification",
+              "api-reference/agents/replace-a-source-agent-s-advanced-qualification",
+              "api-reference/agents/get-advanced-qualification-results-for-a-source-agent-s-leads",
+              "api-reference/agents/set-an-advanced-qualification-answer-by-hand-on-a-source-agent-s-lead"
             ]
           },
           {
